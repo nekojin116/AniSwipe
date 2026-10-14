@@ -31,6 +31,31 @@ export function regionDef(region: Region): RegionDef {
   return MANGA_REGIONS.find((r) => r.id === region) ?? MANGA_REGIONS[0];
 }
 
+/**
+ * Browseable categories (AniList's `GenreCollection`, display form). Hentai is
+ * intentionally omitted — `isAdult: false` already excludes it from results.
+ */
+export const GENRES: string[] = [
+  "Action",
+  "Adventure",
+  "Comedy",
+  "Drama",
+  "Ecchi",
+  "Fantasy",
+  "Horror",
+  "Mahou Shoujo",
+  "Mecha",
+  "Music",
+  "Mystery",
+  "Psychological",
+  "Romance",
+  "Sci-Fi",
+  "Slice of Life",
+  "Sports",
+  "Supernatural",
+  "Thriller",
+];
+
 export interface Anime {
   id: number;
   title: { romaji: string; english?: string | null; native?: string | null };
@@ -123,10 +148,10 @@ const VIEWER_QUERY = `
 `;
 
 const DECK_QUERY = `
-  query DeckPage($page: Int!, $perPage: Int!, $type: MediaType!, $sort: [MediaSort], $search: String, $status: MediaStatus, $country: CountryCode) {
+  query DeckPage($page: Int!, $perPage: Int!, $type: MediaType!, $sort: [MediaSort], $search: String, $status: MediaStatus, $country: CountryCode, $genre: [String]) {
     Page(page: $page, perPage: $perPage) {
-      pageInfo { hasNextPage currentPage }
-      media(type: $type, countryOfOrigin: $country, sort: $sort, search: $search, status: $status, isAdult: false) {
+      pageInfo { hasNextPage currentPage total }
+      media(type: $type, countryOfOrigin: $country, genre_in: $genre, sort: $sort, search: $search, status: $status, isAdult: false) {
         ${MEDIA_FIELDS}
       }
     }
@@ -193,6 +218,16 @@ export async function fetchListedEntries(
   return map;
 }
 
+/** Fisher–Yates shuffle (returns a new array, leaves the input untouched). */
+function shuffle<T>(input: T[]): T[] {
+  const out = [...input];
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
 export async function fetchDeckPage(opts: {
   deckId: DeckId;
   search: string;
@@ -201,15 +236,37 @@ export async function fetchDeckPage(opts: {
   token: string | null;
   mediaType: MediaType;
   region?: Region;
+  /** Genre display-form names to filter by (AND semantics via genre_in). */
+  genres?: string[];
+  /**
+   * Randomize which slice of the result set we page through. AniList has no
+   * random sort, so we jump to a random page (bounded by `total`) and shuffle
+   * client-side. Used by the search deck when no query is typed.
+   */
+  random?: boolean;
   listed?: ListedMap | null;
 }): Promise<{ items: Anime[]; hasNextPage: boolean }> {
   const region = opts.region ?? "ALL";
   const decks = decksFor(opts.mediaType, region);
   const def = decks.find((d) => d.id === opts.deckId) ?? decks[0];
+  const genres = opts.genres ?? [];
+
+  // AniList has no random sort, so for a randomized browse we jump to a
+  // genuinely random page (bounded by `total`, which AniList caps at 5000)
+  // and shuffle client-side. Page 1 stays ordered so the first load still
+  // surfaces recognizable hits.
+  const PER_PAGE = 40;
+  let requestedPage = opts.page;
+  if (opts.random && opts.page > 1) {
+    // Over-fetch a little so the shuffle has more than one page's worth to
+    // mix; the bound keeps us inside AniList's 5000-result window.
+    const maxPage = Math.max(1, Math.min(Math.ceil(5000 / PER_PAGE), 125));
+    requestedPage = 1 + Math.floor(Math.random() * maxPage);
+  }
 
   const variables: Record<string, unknown> = {
-    page: opts.page,
-    perPage: 40,
+    page: requestedPage,
+    perPage: PER_PAGE,
     type: opts.mediaType,
     sort: def.sort,
   };
@@ -218,12 +275,24 @@ export async function fetchDeckPage(opts: {
   // Manga/manhwa/manhua origin filter. AniList treats an explicit null as
   // "match nothing", so the variable must be omitted entirely for "All".
   if (opts.mediaType === "MANGA" && region !== "ALL") variables.country = region;
+  // Genre filter (AND). Only send when non-empty — an empty list would be a
+  // no-op but wastes bytes and risks odd API behavior.
+  if (genres.length > 0) variables.genre = genres;
 
   const data = await alFetch<{
-    Page: { pageInfo: { hasNextPage: boolean }; media: Anime[] } | null;
+    Page: {
+      pageInfo: { hasNextPage: boolean; total?: number };
+      media: Anime[];
+    } | null;
   }>(DECK_QUERY, variables, opts.token);
 
-  const media = data.Page?.media ?? [];
+  let media = data.Page?.media ?? [];
+
+  // Shuffle so a random page doesn't just replay AniList's popularity order.
+  if (opts.random && opts.page > 1) {
+    media = shuffle(media);
+  }
+
   const items = media
     .map((m) => {
       // Trust the per-card entry first, but fall back to the bulk snapshot so

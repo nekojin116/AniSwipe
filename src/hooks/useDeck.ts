@@ -17,6 +17,10 @@ interface Options {
   mediaType: MediaType;
   /** Manga/manhwa/manhua origin filter (ignored for anime). */
   region: Region;
+  /** Genre display-form names; empty array means "no genre filter". */
+  genres: string[];
+  /** Randomize which slice of the result set pages through (search deck). */
+  random: boolean;
   /** Bulk snapshot of the viewer's list; null while guest/loading. */
   listed: ListedMap | null;
   enabled: boolean;
@@ -37,7 +41,18 @@ function dedupe(items: Anime[]): Anime[] {
  * Manages a paginated, filtered queue of titles for the current deck.
  * New pages are pulled automatically whenever the stack runs low.
  */
-export function useDeck({ deckId, search, showAdded, token, mediaType, region, listed, enabled }: Options) {
+export function useDeck({
+  deckId,
+  search,
+  showAdded,
+  token,
+  mediaType,
+  region,
+  genres,
+  random,
+  listed,
+  enabled,
+}: Options) {
   const [items, setItems] = useState<Anime[]>([]);
   const [hasNextPage, setHasNextPage] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -71,6 +86,8 @@ export function useDeck({ deckId, search, showAdded, token, mediaType, region, l
           token,
           mediaType,
           region,
+          genres,
+          random,
           listed: listedRef.current,
         });
         if (seq !== seqRef.current) return;
@@ -95,7 +112,7 @@ export function useDeck({ deckId, search, showAdded, token, mediaType, region, l
         }
       }
     },
-    [deckId, search, showAdded, token, mediaType, region],
+    [deckId, search, showAdded, token, mediaType, region, genres, random],
   );
 
   // Reset whenever the deck definition changes.
@@ -109,7 +126,7 @@ export function useDeck({ deckId, search, showAdded, token, mediaType, region, l
     setError(null);
     setLoading(false);
     if (enabled) void load(seq, 1, true);
-  }, [deckId, search, showAdded, token, mediaType, region, enabled, load]);
+  }, [deckId, search, showAdded, token, mediaType, region, genres, random, enabled, load]);
 
   // The bulk list snapshot landed (or showAdded flipped): hide anything on the
   // user's list that slipped into the queue, and backfill "On your list"

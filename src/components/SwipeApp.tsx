@@ -5,12 +5,14 @@ import type { Dir } from "./AnimeCard";
 import ActionBar from "./ActionBar";
 import Toast, { type ToastState } from "./Toast";
 import { AlertIcon, Spinner } from "./icons";
+import CategoryFilter from "./CategoryFilter";
 import { useDeck } from "../hooks/useDeck";
 import {
   AlError,
   decksFor,
   deleteEntry,
   fetchListedEntries,
+  GENRES,
   regionDef,
   saveEntry,
   type Anime,
@@ -49,6 +51,7 @@ const EMPTY_STATS: Stats = { completed: 0, planning: 0, skipped: 0 };
 
 const MEDIA_TYPE_KEY = "aniswipe.mediaType";
 const REGION_KEY = "aniswipe.region";
+const GENRES_KEY = "aniswipe.genres";
 
 function loadStoredType(): MediaType {
   try {
@@ -67,6 +70,20 @@ function loadStoredRegion(): Region {
   }
 }
 
+function loadStoredGenres(): string[] {
+  try {
+    const raw = localStorage.getItem(GENRES_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    // Keep only strings we recognize as genres (guards against stale data).
+    const valid = new Set(GENRES);
+    return parsed.filter((g): g is string => typeof g === "string" && valid.has(g));
+  } catch {
+    return [];
+  }
+}
+
 export default function SwipeApp({
   token,
   viewer,
@@ -77,6 +94,8 @@ export default function SwipeApp({
   const isGuest = !token;
   const [mediaType, setMediaType] = useState<MediaType>(loadStoredType);
   const [region, setRegion] = useState<Region>(loadStoredRegion);
+  const [genres, setGenres] = useState<string[]>(loadStoredGenres);
+  const [randomize, setRandomize] = useState(true);
   const [deckId, setDeckId] = useState<DeckId>("popular");
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -109,6 +128,14 @@ export default function SwipeApp({
       // ignore
     }
   }, [region]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(GENRES_KEY, JSON.stringify(genres));
+    } catch {
+      // ignore
+    }
+  }, [genres]);
 
   const showToast = useCallback((message: string, kind: ToastState["kind"] = "info") => {
     setToast({ id: Date.now(), message, kind });
@@ -148,7 +175,11 @@ export default function SwipeApp({
   const decks = useMemo(() => decksFor(mediaType, region), [mediaType, region]);
   const mediaNoun = mediaType === "MANGA" ? regionDef(region).term : "anime";
 
-  const searchReady = deckId !== "search" || search.length >= 2;
+  // The search deck serves two modes: a text query, or a category browse.
+  // With categories (and no query) it randomizes so you keep discovering.
+  const searchReady =
+    deckId !== "search" || search.length >= 2 || genres.length > 0;
+  const randomBrowse = deckId === "search" && search.length < 2 && randomize;
   const deck = useDeck({
     deckId,
     search,
@@ -156,6 +187,8 @@ export default function SwipeApp({
     token,
     mediaType,
     region,
+    genres,
+    random: randomBrowse,
     listed,
     enabled: searchReady,
   });
@@ -182,6 +215,16 @@ export default function SwipeApp({
     },
     [mediaType],
   );
+
+  /* ------------------------------- categories ------------------------------ */
+
+  const toggleGenre = useCallback((genre: string) => {
+    setGenres((prev) =>
+      prev.includes(genre) ? prev.filter((g) => g !== genre) : [...prev, genre],
+    );
+  }, []);
+
+  const clearGenres = useCallback(() => setGenres([]), []);
 
   /* ------------------------------ swipe actions ---------------------------- */
 
@@ -342,11 +385,12 @@ export default function SwipeApp({
   const topAnime = deck.items[0];
 
   const emptyPanel = useMemo(() => {
-    if (deckId === "search" && search.length < 2) {
+    // Only prompt for a query when there's no category to browse either.
+    if (deckId === "search" && search.length < 2 && genres.length === 0) {
       return {
         icon: <Spinner className="h-6 w-6 text-indigo-300" />,
         title: mediaType === "MANGA" ? `Search for a ${mediaNoun}` : "Search for an anime",
-        body: "Type at least 2 characters above, then swipe through the results.",
+        body: "Type at least 2 characters above, or pick categories on the left.",
       };
     }
     if (deck.loading || (deck.items.length === 0 && deck.hasNextPage && !deck.error)) {
@@ -370,7 +414,7 @@ export default function SwipeApp({
       body: "You've swiped through this entire deck. Try another one.",
       switchDeck: true,
     };
-  }, [deckId, search, mediaType, mediaNoun, deck.loading, deck.items.length, deck.hasNextPage, deck.error]);
+  }, [deckId, search, genres.length, mediaType, mediaNoun, deck.loading, deck.items.length, deck.hasNextPage, deck.error]);
 
   const showEmpty = deck.items.length === 0 && !(deck.error && deck.loading);
 
@@ -392,9 +436,26 @@ export default function SwipeApp({
       />
 
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center px-4 pb-8 pt-4">
-        {/* Deck meta row */}
-        <div className="mb-3 flex w-full max-w-[400px] items-center justify-between gap-3">
-          <p className="truncate text-xs text-slate-500">{hint}</p>
+        <div className="flex w-full flex-1 items-start justify-center gap-6">
+          {/* Category rail — only on the search deck. Wide screens: a sticky
+              left column. Narrow: stacked above the deck. */}
+          {deckId === "search" && (
+            <div className="w-full max-w-[400px] lg:sticky lg:top-24 lg:w-64 lg:max-w-none">
+              <CategoryFilter
+                selected={genres}
+                onToggle={toggleGenre}
+                onClear={clearGenres}
+                randomize={randomize}
+                onRandomizeChange={setRandomize}
+                mediaTypeLabel={mediaNoun}
+              />
+            </div>
+          )}
+
+          <div className="flex w-full flex-col items-center">
+            {/* Deck meta row */}
+            <div className="mb-3 flex w-full max-w-[400px] items-center justify-between gap-3">
+              <p className="truncate text-xs text-slate-500">{hint}</p>
           {!isGuest ? (
             <label
               className="flex shrink-0 cursor-pointer items-center gap-1.5 text-[11px] text-slate-500 transition hover:text-slate-300"
@@ -469,6 +530,8 @@ export default function SwipeApp({
             ? `Drag the card — ${displayTitle(topAnime)}`
             : "Use the buttons or arrow keys to swipe"}
         </p>
+          </div>
+        </div>
 
         <div className="mt-3">
           <ActionBar

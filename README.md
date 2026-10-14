@@ -10,7 +10,8 @@ deck for backfilling your watch history in seconds.
 
 Decks per media type: **Popular**, **Top rated**, **This season / Ongoing**, and **Search** — with
 an experimental **Manga** section alongside anime, including an origin filter
-(**All / 🇯🇵 Manga / 🇰🇷 Manhwa / 🇨🇳 Manhua**). Titles already on your AniList are hidden by
+(**All / 🇯🇵 Manga / 🇰🇷 Manhwa / 🇨🇳 Manhua**) and a genre **category filter** on the search deck
+that live-updates a randomized browse. Titles already on your AniList are hidden by
 default (requires login — the filter uses your authenticated list).
 
 ## Stack
@@ -98,6 +99,13 @@ The `api/token.mjs` file is deployed automatically as a serverless function — 
   manhua pages. "All" omits the variable entirely — AniList treats an explicit `null` as "match
   nothing". The choice persists in `localStorage` (`aniswipe.region`) and card meta lines render
   the region-correct term (`🇯🇵 Manga` / `🇰🇷 Manhwa` / `🇨🇳 Manhua`).
+- **Category filter (search deck)**: a sidebar of AniList's 18 genres (multi-select, AND
+  semantics via `genre_in`) that live-updates the deck on every toggle — no apply button. With
+  categories selected and no search query, the deck becomes a **random browse**: it jumps to a
+  random result page (AniList has no random sort; `pageInfo.total` is capped at 5000) and
+  Fisher–Yates-shuffles client-side, so every reload surfaces different matches. A "Shuffle
+  results" toggle falls back to ordered browsing. Selections persist (`aniswipe.genres`) and
+  compose with the manga origin filter and text search.
 - **Already-added filter**: logged-in sessions fetch the viewer's full list once per media type
   (`Page.mediaList` → `mediaId` set) and filter every deck page against it, merged with the
   per-card `mediaListEntry` field — either source alone hides your titles, and "On your list"
