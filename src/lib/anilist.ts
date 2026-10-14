@@ -6,6 +6,31 @@ export { AlError };
 
 export type MediaType = "ANIME" | "MANGA";
 
+/** Country-of-origin filter for the manga section (manga / manhwa / manhua). */
+export type RegionCode = "JP" | "KR" | "CN";
+export type Region = "ALL" | RegionCode;
+
+export interface RegionDef {
+  id: Region;
+  /** Chip label. */
+  label: string;
+  /** Lowercase noun used in hints and placeholders: manga / manhwa / manhua. */
+  term: string;
+  /** Example title for the search placeholder of this origin. */
+  example: string;
+}
+
+export const MANGA_REGIONS: RegionDef[] = [
+  { id: "ALL", label: "All", term: "manga", example: "Berserk" },
+  { id: "JP", label: "🇯🇵 Manga", term: "manga", example: "Berserk" },
+  { id: "KR", label: "🇰🇷 Manhwa", term: "manhwa", example: "Solo Leveling" },
+  { id: "CN", label: "🇨🇳 Manhua", term: "manhua", example: "Tian Guan Ci Fu" },
+];
+
+export function regionDef(region: Region): RegionDef {
+  return MANGA_REGIONS.find((r) => r.id === region) ?? MANGA_REGIONS[0];
+}
+
 export interface Anime {
   id: number;
   title: { romaji: string; english?: string | null; native?: string | null };
@@ -13,6 +38,7 @@ export interface Anime {
   episodes?: number | null;
   chapters?: number | null;
   format?: string | null;
+  countryOfOrigin?: string | null;
   seasonYear?: number | null;
   averageScore?: number | null;
   genres: string[];
@@ -53,21 +79,23 @@ const ANIME_DECKS: DeckDef[] = [
   { id: "search", label: "Search", hint: "Find a specific anime", sort: ["SEARCH_MATCH"] },
 ];
 
-const MANGA_DECKS: DeckDef[] = [
-  { id: "popular", label: "Popular", hint: "The most popular manga of all time", sort: ["POPULARITY_DESC"] },
-  { id: "top", label: "Top rated", hint: "Highest scored manga of all time", sort: ["SCORE_DESC"] },
-  {
-    id: "season",
-    label: "Ongoing",
-    hint: "Manga serializing right now",
-    sort: ["TRENDING_DESC"],
-    status: "RELEASING",
-  },
-  { id: "search", label: "Search", hint: "Find a specific manga", sort: ["SEARCH_MATCH"] },
-];
-
-export function decksFor(mediaType: MediaType): DeckDef[] {
-  return mediaType === "MANGA" ? MANGA_DECKS : ANIME_DECKS;
+/** Region-aware manga decks: hints use the right term (manga/manhwa/manhua). */
+export function decksFor(mediaType: MediaType, region: Region = "ALL"): DeckDef[] {
+  if (mediaType !== "MANGA") return ANIME_DECKS;
+  const { term } = regionDef(region);
+  const cap = term[0].toUpperCase() + term.slice(1);
+  return [
+    { id: "popular", label: "Popular", hint: `The most popular ${term} of all time`, sort: ["POPULARITY_DESC"] },
+    { id: "top", label: "Top rated", hint: `Highest scored ${term} of all time`, sort: ["SCORE_DESC"] },
+    {
+      id: "season",
+      label: "Ongoing",
+      hint: `${cap} serializing right now`,
+      sort: ["TRENDING_DESC"],
+      status: "RELEASING",
+    },
+    { id: "search", label: "Search", hint: `Find a specific ${term}`, sort: ["SEARCH_MATCH"] },
+  ];
 }
 
 /* --------------------------------- Queries -------------------------------- */
@@ -79,6 +107,7 @@ const MEDIA_FIELDS = `
   episodes
   chapters
   format
+  countryOfOrigin
   seasonYear
   averageScore
   genres
@@ -94,10 +123,10 @@ const VIEWER_QUERY = `
 `;
 
 const DECK_QUERY = `
-  query DeckPage($page: Int!, $perPage: Int!, $type: MediaType!, $sort: [MediaSort], $search: String, $status: MediaStatus) {
+  query DeckPage($page: Int!, $perPage: Int!, $type: MediaType!, $sort: [MediaSort], $search: String, $status: MediaStatus, $country: CountryCode) {
     Page(page: $page, perPage: $perPage) {
       pageInfo { hasNextPage currentPage }
-      media(type: $type, sort: $sort, search: $search, status: $status, isAdult: false) {
+      media(type: $type, countryOfOrigin: $country, sort: $sort, search: $search, status: $status, isAdult: false) {
         ${MEDIA_FIELDS}
       }
     }
@@ -171,9 +200,11 @@ export async function fetchDeckPage(opts: {
   showAdded: boolean;
   token: string | null;
   mediaType: MediaType;
+  region?: Region;
   listed?: ListedMap | null;
 }): Promise<{ items: Anime[]; hasNextPage: boolean }> {
-  const decks = decksFor(opts.mediaType);
+  const region = opts.region ?? "ALL";
+  const decks = decksFor(opts.mediaType, region);
   const def = decks.find((d) => d.id === opts.deckId) ?? decks[0];
 
   const variables: Record<string, unknown> = {
@@ -184,6 +215,9 @@ export async function fetchDeckPage(opts: {
   };
   if (def.status) variables.status = def.status;
   if (opts.deckId === "search" && opts.search) variables.search = opts.search;
+  // Manga/manhwa/manhua origin filter. AniList treats an explicit null as
+  // "match nothing", so the variable must be omitted entirely for "All".
+  if (opts.mediaType === "MANGA" && region !== "ALL") variables.country = region;
 
   const data = await alFetch<{
     Page: { pageInfo: { hasNextPage: boolean }; media: Anime[] } | null;

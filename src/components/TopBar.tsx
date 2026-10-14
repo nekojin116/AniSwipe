@@ -1,4 +1,5 @@
-import type { DeckDef, DeckId, MediaType, Viewer } from "../lib/anilist";
+import type { DeckDef, DeckId, MediaType, Region, Viewer } from "../lib/anilist";
+import { MANGA_REGIONS, regionDef } from "../lib/anilist";
 import { LogoMark, LogoutIcon, SearchIcon } from "./icons";
 
 interface Props {
@@ -6,8 +7,10 @@ interface Props {
   decks: DeckDef[];
   deckId: DeckId;
   mediaType: MediaType;
+  region: Region;
   onMediaTypeChange: (type: MediaType) => void;
   onDeckChange: (id: DeckId) => void;
+  onRegionChange: (region: Region) => void;
   searchInput: string;
   onSearchChange: (value: string) => void;
   onLogin: () => void;
@@ -21,8 +24,10 @@ export default function TopBar({
   decks,
   deckId,
   mediaType,
+  region,
   onMediaTypeChange,
   onDeckChange,
+  onRegionChange,
   searchInput,
   onSearchChange,
   onLogin,
@@ -120,6 +125,35 @@ export default function TopBar({
         </div>
       </div>
 
+      {/* Manga/manhwa/manhua origin filter — manga decks only */}
+      {mediaType === "MANGA" && (
+        <div className="border-t border-white/5">
+          <div className="no-scrollbar mx-auto flex w-full max-w-5xl items-center gap-1.5 overflow-x-auto px-4 py-1.5">
+            <span className="shrink-0 pr-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+              Origin
+            </span>
+            {MANGA_REGIONS.map((r) => (
+              <button
+                key={r.id}
+                type="button"
+                aria-pressed={region === r.id}
+                onClick={() => onRegionChange(r.id)}
+                title={`Only ${r.term} from ${
+                  r.id === "ALL" ? "any country" : r.id === "JP" ? "Japan" : r.id === "KR" ? "Korea" : "China"
+                }`}
+                className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium transition ${
+                  region === r.id
+                    ? "border border-indigo-400/60 bg-indigo-500/20 text-indigo-200"
+                    : "border border-transparent text-slate-500 hover:bg-white/5 hover:text-slate-300"
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {deckId === "search" && (
         <div className="mx-auto w-full max-w-5xl px-4 pb-3">
           <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 focus-within:border-indigo-400/50">
@@ -130,7 +164,7 @@ export default function TopBar({
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder={
                 mediaType === "MANGA"
-                  ? "Search manga titles… (e.g. Berserk)"
+                  ? `Search ${regionDef(region).term} titles… (e.g. ${regionDef(region).example})`
                   : "Search anime titles… (e.g. Frieren)"
               }
               className="w-full bg-transparent text-sm text-slate-100 outline-none placeholder:text-slate-500"

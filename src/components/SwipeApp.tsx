@@ -11,11 +11,13 @@ import {
   decksFor,
   deleteEntry,
   fetchListedEntries,
+  regionDef,
   saveEntry,
   type Anime,
   type DeckId,
   type ListedMap,
   type MediaType,
+  type Region,
   type Viewer,
 } from "../lib/anilist";
 import { displayTitle } from "../lib/format";
@@ -46,12 +48,22 @@ interface Stats {
 const EMPTY_STATS: Stats = { completed: 0, planning: 0, skipped: 0 };
 
 const MEDIA_TYPE_KEY = "aniswipe.mediaType";
+const REGION_KEY = "aniswipe.region";
 
 function loadStoredType(): MediaType {
   try {
     return localStorage.getItem(MEDIA_TYPE_KEY) === "MANGA" ? "MANGA" : "ANIME";
   } catch {
     return "ANIME";
+  }
+}
+
+function loadStoredRegion(): Region {
+  try {
+    const value = localStorage.getItem(REGION_KEY);
+    return value === "JP" || value === "KR" || value === "CN" ? value : "ALL";
+  } catch {
+    return "ALL";
   }
 }
 
@@ -64,6 +76,7 @@ export default function SwipeApp({
 }: Props) {
   const isGuest = !token;
   const [mediaType, setMediaType] = useState<MediaType>(loadStoredType);
+  const [region, setRegion] = useState<Region>(loadStoredRegion);
   const [deckId, setDeckId] = useState<DeckId>("popular");
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -88,6 +101,14 @@ export default function SwipeApp({
       // ignore
     }
   }, [mediaType]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(REGION_KEY, region);
+    } catch {
+      // ignore
+    }
+  }, [region]);
 
   const showToast = useCallback((message: string, kind: ToastState["kind"] = "info") => {
     setToast({ id: Date.now(), message, kind });
@@ -124,8 +145,8 @@ export default function SwipeApp({
     };
   }, [token, viewer, mediaType]);
 
-  const decks = useMemo(() => decksFor(mediaType), [mediaType]);
-  const mediaNoun = mediaType === "MANGA" ? "manga" : "anime";
+  const decks = useMemo(() => decksFor(mediaType, region), [mediaType, region]);
+  const mediaNoun = mediaType === "MANGA" ? regionDef(region).term : "anime";
 
   const searchReady = deckId !== "search" || search.length >= 2;
   const deck = useDeck({
@@ -134,6 +155,7 @@ export default function SwipeApp({
     showAdded,
     token,
     mediaType,
+    region,
     listed,
     enabled: searchReady,
   });
@@ -323,7 +345,7 @@ export default function SwipeApp({
     if (deckId === "search" && search.length < 2) {
       return {
         icon: <Spinner className="h-6 w-6 text-indigo-300" />,
-        title: mediaType === "MANGA" ? "Search for a manga" : "Search for an anime",
+        title: mediaType === "MANGA" ? `Search for a ${mediaNoun}` : "Search for an anime",
         body: "Type at least 2 characters above, then swipe through the results.",
       };
     }
@@ -359,8 +381,10 @@ export default function SwipeApp({
         decks={decks}
         deckId={deckId}
         mediaType={mediaType}
+        region={region}
         onMediaTypeChange={switchMediaType}
         onDeckChange={setDeckId}
+        onRegionChange={setRegion}
         searchInput={searchInput}
         onSearchChange={setSearchInput}
         onLogin={onLogin}

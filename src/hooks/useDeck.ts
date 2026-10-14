@@ -6,6 +6,7 @@ import {
   type DeckId,
   type ListedMap,
   type MediaType,
+  type Region,
 } from "../lib/anilist";
 
 interface Options {
@@ -14,6 +15,8 @@ interface Options {
   showAdded: boolean;
   token: string | null;
   mediaType: MediaType;
+  /** Manga/manhwa/manhua origin filter (ignored for anime). */
+  region: Region;
   /** Bulk snapshot of the viewer's list; null while guest/loading. */
   listed: ListedMap | null;
   enabled: boolean;
@@ -34,7 +37,7 @@ function dedupe(items: Anime[]): Anime[] {
  * Manages a paginated, filtered queue of titles for the current deck.
  * New pages are pulled automatically whenever the stack runs low.
  */
-export function useDeck({ deckId, search, showAdded, token, mediaType, listed, enabled }: Options) {
+export function useDeck({ deckId, search, showAdded, token, mediaType, region, listed, enabled }: Options) {
   const [items, setItems] = useState<Anime[]>([]);
   const [hasNextPage, setHasNextPage] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -67,6 +70,7 @@ export function useDeck({ deckId, search, showAdded, token, mediaType, listed, e
           showAdded,
           token,
           mediaType,
+          region,
           listed: listedRef.current,
         });
         if (seq !== seqRef.current) return;
@@ -91,7 +95,7 @@ export function useDeck({ deckId, search, showAdded, token, mediaType, listed, e
         }
       }
     },
-    [deckId, search, showAdded, token, mediaType],
+    [deckId, search, showAdded, token, mediaType, region],
   );
 
   // Reset whenever the deck definition changes.
@@ -105,7 +109,7 @@ export function useDeck({ deckId, search, showAdded, token, mediaType, listed, e
     setError(null);
     setLoading(false);
     if (enabled) void load(seq, 1, true);
-  }, [deckId, search, showAdded, token, mediaType, enabled, load]);
+  }, [deckId, search, showAdded, token, mediaType, region, enabled, load]);
 
   // The bulk list snapshot landed (or showAdded flipped): hide anything on the
   // user's list that slipped into the queue, and backfill "On your list"

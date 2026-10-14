@@ -10,6 +10,10 @@ export function secondaryTitle(anime: Anime): string | null {
   return alt;
 }
 
+/** Print-origin terms: a KR "MANGA" is a manhwa, a CN one is a manhua. */
+const MANGA_TERM: Record<string, string> = { JP: "Manga", KR: "Manhwa", CN: "Manhua" };
+const REGION_FLAG: Record<string, string> = { JP: "🇯🇵", KR: "🇰🇷", CN: "🇨🇳" };
+
 const FORMAT_LABELS: Record<string, string> = {
   TV: "TV",
   TV_SHORT: "TV Short",
@@ -23,10 +27,18 @@ const FORMAT_LABELS: Record<string, string> = {
   ONE_SHOT: "One-shot",
 };
 
+const PRINT_FORMATS = new Set(["MANGA", "NOVEL", "ONE_SHOT"]);
+
 export function metaLine(anime: Anime): string {
   const parts: string[] = [];
   if (anime.seasonYear) parts.push(String(anime.seasonYear));
-  if (anime.format) parts.push(FORMAT_LABELS[anime.format] ?? anime.format);
+  if (anime.format) {
+    const country = anime.countryOfOrigin ?? "";
+    let label = FORMAT_LABELS[anime.format] ?? anime.format;
+    if (anime.format === "MANGA" && MANGA_TERM[country]) label = MANGA_TERM[country];
+    // Flag the origin on print media (manga/manhwa/manhua); anime stays clean.
+    parts.push(PRINT_FORMATS.has(anime.format) && REGION_FLAG[country] ? `${REGION_FLAG[country]} ${label}` : label);
+  }
   if (anime.episodes) parts.push(`${anime.episodes} ep${anime.episodes > 1 ? "s" : ""}`);
   else if (anime.chapters) parts.push(`${anime.chapters} ch`);
   return parts.join("  •  ");
