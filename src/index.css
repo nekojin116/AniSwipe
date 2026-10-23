@@ -4,14 +4,14 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-display: "Space Grotesk", "Inter", ui-sans-serif, sans-serif;
 
-  --color-ink: #08080d;
-  --color-ink-2: #0c0c14;
-  --color-panel: #14141f;
-  --color-brand-1: #6366f1;
-  --color-brand-2: #ec4899;
-  --color-like: #34d399;
-  --color-nope: #fb7185;
-  --color-plan: #60a5fa;
+  --color-ink: #fbf9f8;
+  --color-ink-2: #f6f3f1;
+  --color-panel: #ffffff;
+  --color-brand-1: #f43f5e;
+  --color-brand-2: #be123c;
+  --color-like: #e11d48;
+  --color-nope: #a8a29e;
+  --color-plan: #d97706;
 }
 
 html,
@@ -22,33 +22,33 @@ body,
 
 body {
   background-color: var(--color-ink);
-  color: #e2e8f0;
+  color: #1c1917;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   overscroll-behavior-y: none;
 }
 
 ::selection {
-  background: rgba(236, 72, 153, 0.35);
+  background: rgba(244, 63, 94, 0.25);
 }
 
 /* Glassmorphism surface */
 .glass {
-  background: rgba(255, 255, 255, 0.045);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(28, 25, 23, 0.08);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
 }
 
 .glass-strong {
-  background: rgba(16, 16, 26, 0.82);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(28, 25, 23, 0.1);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
 }
 
 .gradient-text {
-  background: linear-gradient(100deg, #a5b4fc 0%, #f0abfc 45%, #fda4af 100%);
+  background: linear-gradient(100deg, #f43f5e 0%, #e11d48 45%, #9f1239 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -70,7 +70,7 @@ body {
   position: fixed;
   border-radius: 9999px;
   filter: blur(110px);
-  opacity: 0.35;
+  opacity: 0.3;
   pointer-events: none;
   z-index: 0;
   animation: blob-float 26s ease-in-out infinite alternate;
@@ -90,6 +90,55 @@ body {
   }
   100% {
     transform: translate3d(-5vw, 6vh, 0) scale(0.95);
+  }
+}
+
+/* Decorative falling sakura petals (see SakuraLayer.tsx) */
+.sakura-petal {
+  position: absolute;
+  top: 0;
+  display: block;
+  background: linear-gradient(135deg, #ffe4e6 0%, #fda4af 45%, #fb7185 80%, #f43f5e 100%);
+  box-shadow: 0 1px 4px rgba(244, 63, 94, 0.18);
+  border-radius: 100% 0 100% 0;
+  opacity: 0;
+  animation-name: sakura-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+
+.sakura-petal--1 {
+  border-radius: 0 100% 0 100%;
+}
+
+@keyframes sakura-fall {
+  0% {
+    transform: translate3d(0, -15vh, 0) rotate(0deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: var(--petal-opacity, 0.5);
+  }
+  30% {
+    transform: translate3d(calc(var(--drift, 0px) * -0.4), 22vh, 0)
+      rotate(calc(var(--spin, 360deg) * 0.3));
+  }
+  55% {
+    transform: translate3d(calc(var(--drift, 0px) * 0.6), 55vh, 0)
+      rotate(calc(var(--spin, 360deg) * 0.55));
+    opacity: var(--petal-opacity, 0.5);
+  }
+  80% {
+    transform: translate3d(calc(var(--drift, 0px) * -0.2), 85vh, 0)
+      rotate(calc(var(--spin, 360deg) * 0.8));
+  }
+  92% {
+    opacity: 0;
+  }
+  100% {
+    transform: translate3d(calc(var(--drift, 0px) * 0.2), 115vh, 0) rotate(var(--spin, 360deg));
+    opacity: 0;
   }
 }
 
@@ -120,5 +169,9 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .blob {
     animation: none;
+  }
+  .sakura-petal {
+    animation: none;
+    opacity: 0;
   }
 }

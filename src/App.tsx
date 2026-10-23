@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Landing from "./components/Landing";
 import SwipeApp from "./components/SwipeApp";
+import SakuraLayer from "./components/SakuraLayer";
 import { Spinner } from "./components/icons";
 import { AlError, fetchViewer, type Viewer } from "./lib/anilist";
 import {
@@ -93,8 +94,8 @@ export default function App() {
   if (exchanging) {
     screen = (
       <div className="relative z-10 flex min-h-full flex-col items-center justify-center gap-4">
-        <Spinner className="h-8 w-8 text-indigo-300" />
-        <p className="text-sm text-slate-400">Completing login with AniList…</p>
+        <Spinner className="h-8 w-8 text-rose-500" />
+        <p className="text-sm text-stone-500">Completing login with AniList…</p>
       </div>
     );
   } else if (token && viewer) {
@@ -110,13 +111,13 @@ export default function App() {
   } else if (token) {
     screen = viewerLoading || !viewerError ? (
       <div className="relative z-10 flex min-h-full flex-col items-center justify-center gap-4">
-        <Spinner className="h-8 w-8 text-indigo-300" />
-        <p className="text-sm text-slate-400">Connecting to your AniList…</p>
+        <Spinner className="h-8 w-8 text-rose-500" />
+        <p className="text-sm text-stone-500">Connecting to your AniList…</p>
       </div>
     ) : (
       <div className="relative z-10 flex min-h-full flex-col items-center justify-center gap-4 px-6 text-center">
-        <h2 className="font-display text-xl font-semibold text-white">Something went wrong</h2>
-        <p className="max-w-sm text-sm text-slate-400">{viewerError}</p>
+        <h2 className="font-display text-xl font-semibold text-stone-900">Something went wrong</h2>
+        <p className="max-w-sm text-sm text-stone-500">{viewerError}</p>
         <div className="mt-2 flex gap-3">
           <button
             type="button"
@@ -128,7 +129,7 @@ export default function App() {
           <button
             type="button"
             onClick={() => handleLogout()}
-            className="glass rounded-full px-5 py-2.5 text-sm font-medium text-slate-200 transition hover:bg-white/10"
+            className="glass rounded-full px-5 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-900/5"
           >
             Log out
           </button>
@@ -159,9 +160,10 @@ export default function App() {
   return (
     <div className="relative min-h-full overflow-x-hidden">
       {/* Ambient background */}
-      <div className="blob left-[-12%] top-[-14%] h-[460px] w-[460px] bg-indigo-700" />
-      <div className="blob blob-b right-[-10%] top-[30%] h-[420px] w-[420px] bg-fuchsia-700" />
-      <div className="blob left-[35%] bottom-[-16%] h-[380px] w-[380px] bg-pink-800" />
+      <div className="blob left-[-12%] top-[-14%] h-[460px] w-[460px] bg-rose-400" />
+      <div className="blob blob-b right-[-10%] top-[30%] h-[420px] w-[420px] bg-pink-300" />
+      <div className="blob left-[35%] bottom-[-16%] h-[380px] w-[380px] bg-rose-300" />
+      <SakuraLayer />
       {screen}
     </div>
   );

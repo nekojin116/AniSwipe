@@ -16,13 +16,13 @@ export function LogoMark(props: Props) {
     <svg viewBox="0 0 32 32" fill="none" {...props}>
       <defs>
         <linearGradient id="aniswipe-g" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#6366f1" />
-          <stop offset="1" stopColor="#ec4899" />
+          <stop offset="0" stopColor="#f43f5e" />
+          <stop offset="1" stopColor="#be123c" />
         </linearGradient>
       </defs>
       <rect x="4" y="7" width="20" height="18" rx="4" fill="url(#aniswipe-g)" opacity="0.45" transform="rotate(-10 16 16)" />
       <rect x="7" y="6" width="18" height="17" rx="4" fill="url(#aniswipe-g)" />
-      <rect x="10.5" y="9.5" width="11" height="10" rx="2.5" fill="#08080d" opacity="0.85" />
+      <rect x="10.5" y="9.5" width="11" height="10" rx="2.5" fill="#ffffff" opacity="0.85" />
     </svg>
   );
 }
@@ -91,6 +91,15 @@ export function BoltIcon(props: Props) {
   return (
     <svg {...base} {...props}>
       <path d="M13 2 4 14h7l-1 8 9-12h-7z" />
+    </svg>
+  );
+}
+
+export function InfoIcon(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 11v5M12 7.5v.01" />
     </svg>
   );
 }

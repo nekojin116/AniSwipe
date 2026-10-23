@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertIcon, CheckIcon } from "./icons";
+import { AlertIcon, CheckIcon, InfoIcon } from "./icons";
 
 export interface ToastState {
   id: number;
@@ -10,26 +10,28 @@ export interface ToastState {
 export default function Toast({ toast }: { toast: ToastState | null }) {
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex justify-center px-4">
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {toast && (
           <motion.div
             key={toast.id}
-            initial={{ y: 24, opacity: 0, scale: 0.95 }}
-            animate={{ y: 0, opacity: 1, scale: 1 }}
-            exit={{ y: 12, opacity: 0, scale: 0.97 }}
-            transition={{ type: "spring", stiffness: 380, damping: 28 }}
+            initial={{ y: 18, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 0, opacity: 0 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
             className={`glass-strong flex max-w-[92vw] items-center gap-2.5 rounded-full px-4 py-2.5 text-sm font-medium shadow-2xl ${
               toast.kind === "err"
-                ? "text-rose-300"
+                ? "text-rose-600"
                 : toast.kind === "ok"
-                  ? "text-emerald-300"
-                  : "text-slate-200"
+                  ? "text-emerald-600"
+                  : "text-stone-700"
             }`}
           >
             {toast.kind === "err" ? (
               <AlertIcon className="h-4 w-4 shrink-0" />
-            ) : (
+            ) : toast.kind === "ok" ? (
               <CheckIcon className="h-4 w-4 shrink-0" />
+            ) : (
+              <InfoIcon className="h-4 w-4 shrink-0" />
             )}
             <span className="line-clamp-2">{toast.message}</span>
           </motion.div>

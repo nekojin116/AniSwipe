@@ -276,7 +276,7 @@ export default function SwipeApp({
               : typeAtSwipe === "MANGA"
                 ? "Plan to read"
                 : "Plan to watch";
-          showToast(`${label} ✓ ${displayTitle(anime)}`, "ok");
+          showToast(`${label} — ${displayTitle(anime)}`, "ok");
         })
         .catch((err) => {
           const alErr = err instanceof AlError ? err : new AlError(String(err));
@@ -388,21 +388,21 @@ export default function SwipeApp({
     // Only prompt for a query when there's no category to browse either.
     if (deckId === "search" && search.length < 2 && genres.length === 0) {
       return {
-        icon: <Spinner className="h-6 w-6 text-indigo-300" />,
+        icon: <Spinner className="h-6 w-6 text-rose-500" />,
         title: mediaType === "MANGA" ? `Search for a ${mediaNoun}` : "Search for an anime",
         body: "Type at least 2 characters above, or pick categories on the left.",
       };
     }
     if (deck.loading || (deck.items.length === 0 && deck.hasNextPage && !deck.error)) {
       return {
-        icon: <Spinner className="h-7 w-7 text-indigo-300" />,
+        icon: <Spinner className="h-7 w-7 text-rose-500" />,
         title: "Loading deck…",
         body: `Fetching ${mediaNoun} from AniList.`,
       };
     }
     if (deck.error && deck.items.length === 0) {
       return {
-        icon: <AlertIcon className="h-7 w-7 text-rose-300" />,
+        icon: <AlertIcon className="h-7 w-7 text-rose-600" />,
         title: "Couldn't load the deck",
         body: deck.error.message,
         retry: true,
@@ -455,23 +455,23 @@ export default function SwipeApp({
           <div className="flex w-full flex-col items-center">
             {/* Deck meta row */}
             <div className="mb-3 flex w-full max-w-[400px] items-center justify-between gap-3">
-              <p className="truncate text-xs text-slate-500">{hint}</p>
+              <p className="truncate text-xs text-stone-500">{hint}</p>
           {!isGuest ? (
             <label
-              className="flex shrink-0 cursor-pointer items-center gap-1.5 text-[11px] text-slate-500 transition hover:text-slate-300"
+              className="flex shrink-0 cursor-pointer items-center gap-1.5 text-[11px] text-stone-500 transition hover:text-stone-700"
               title="Hide titles that are already on your AniList"
             >
               <input
                 type="checkbox"
                 checked={!showAdded}
                 onChange={(e) => setShowAdded(!e.target.checked)}
-                className="h-3 w-3 accent-indigo-500"
+                className="h-3 w-3 accent-rose-600"
               />
               Hide already-added
             </label>
           ) : (
             <span
-              className="shrink-0 rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] font-medium text-amber-300"
+              className="shrink-0 rounded-full border border-amber-500/40 bg-amber-400/15 px-2 py-0.5 text-[10px] font-medium text-amber-800"
               title="Without your AniList login the app can't know what you've watched, so nothing is filtered. Log in to hide titles you've already added."
             >
               Filter off in guest mode
@@ -484,12 +484,12 @@ export default function SwipeApp({
           <SwipeDeck ref={deckRef} items={deck.items} mediaType={mediaType} onSwipe={handleSwipe} />
 
           {showEmpty && (
-            <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-3 rounded-[28px] border border-dashed border-white/10 bg-white/[0.02] px-8 text-center">
+            <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-3 rounded-[28px] border border-dashed border-stone-900/10 bg-stone-900/[0.03] px-8 text-center">
               {emptyPanel.icon}
-              <h3 className="font-display text-lg font-semibold text-slate-100">
+              <h3 className="font-display text-lg font-semibold text-stone-900">
                 {emptyPanel.title}
               </h3>
-              <p className="max-w-[260px] text-sm text-slate-500">{emptyPanel.body}</p>
+              <p className="max-w-[260px] text-sm text-stone-500">{emptyPanel.body}</p>
               {emptyPanel.retry && (
                 <button
                   type="button"
@@ -506,7 +506,7 @@ export default function SwipeApp({
                       key={d.id}
                       type="button"
                       onClick={() => setDeckId(d.id)}
-                      className="glass rounded-full px-4 py-1.5 text-xs font-medium text-slate-200 transition hover:bg-white/10"
+                      className="glass rounded-full px-4 py-1.5 text-xs font-medium text-stone-700 transition hover:bg-stone-900/5"
                     >
                       {d.label}
                     </button>
@@ -518,14 +518,14 @@ export default function SwipeApp({
 
           {/* Non-blocking error banner (deck still has cards) */}
           {deck.error && deck.items.length > 0 && (
-            <div className="absolute inset-x-0 bottom-0 z-40 flex items-center justify-center gap-2 rounded-b-[24px] bg-rose-500/15 px-4 py-2 text-xs text-rose-200 backdrop-blur">
+            <div className="absolute inset-x-0 bottom-0 z-40 flex items-center justify-center gap-2 rounded-b-[24px] bg-rose-500/10 px-4 py-2 text-xs text-rose-700 backdrop-blur">
               <AlertIcon className="h-3.5 w-3.5" />
               {deck.error.message}
             </div>
           )}
         </div>
 
-        <p className="mt-4 select-none text-center text-[11px] text-slate-600">
+        <p className="mt-4 select-none text-center text-[11px] text-stone-500">
           {topAnime
             ? `Drag the card — ${displayTitle(topAnime)}`
             : "Use the buttons or arrow keys to swipe"}
@@ -546,7 +546,7 @@ export default function SwipeApp({
         </div>
 
         {isGuest && (
-          <div className="glass mt-5 flex items-center gap-3 rounded-full px-4 py-2 text-xs text-slate-400">
+          <div className="glass mt-5 flex items-center gap-3 rounded-full px-4 py-2 text-xs text-stone-500">
             <span>
               Browsing as a guest — swipes aren&apos;t saved, and watched titles aren&apos;t
               hidden.
@@ -562,26 +562,26 @@ export default function SwipeApp({
         )}
 
         {/* Session stats */}
-        <div className="mt-6 flex items-center gap-4 text-xs text-slate-500">
+        <div className="mt-6 flex items-center gap-4 text-xs text-stone-500">
           <span>
-            <strong className="font-semibold text-emerald-400">{stats.completed}</strong>{" "}
+            <strong className="font-semibold text-rose-600">{stats.completed}</strong>{" "}
             {mediaType === "MANGA" ? "read" : "watched"}
           </span>
-          <span className="text-slate-700">•</span>
+          <span className="text-stone-300">•</span>
           <span>
-            <strong className="font-semibold text-blue-400">{stats.planning}</strong> planned
+            <strong className="font-semibold text-amber-600">{stats.planning}</strong> planned
           </span>
-          <span className="text-slate-700">•</span>
+          <span className="text-stone-300">•</span>
           <span>
-            <strong className="font-semibold text-slate-300">{stats.skipped}</strong> skipped
+            <strong className="font-semibold text-stone-400">{stats.skipped}</strong> skipped
           </span>
           {totalSwipes > 0 && (
             <>
-              <span className="text-slate-700">•</span>
+              <span className="text-stone-300">•</span>
               <button
                 type="button"
                 onClick={() => setStats(EMPTY_STATS)}
-                className="text-slate-600 underline-offset-2 transition hover:text-slate-400 hover:underline"
+                className="text-stone-500 underline-offset-2 transition hover:text-stone-700 hover:underline"
               >
                 reset
               </button>

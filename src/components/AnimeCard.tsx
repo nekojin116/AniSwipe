@@ -98,12 +98,12 @@ export default function AnimeCard({ anime, mediaType, top, pending, onSwipe }: P
 
   const title = displayTitle(anime);
   const altTitle = secondaryTitle(anime);
-  const color = anime.coverImage.color ?? "#6366f1";
+  const color = anime.coverImage.color ?? "#be123c";
   const score = anime.averageScore ? Math.round(anime.averageScore) : null;
 
   return (
     <motion.div
-      className="h-full w-full select-none overflow-hidden rounded-[28px] bg-panel ring-1 ring-white/10 shadow-[0_30px_70px_-20px_rgba(0,0,0,0.9)]"
+      className="h-full w-full select-none overflow-hidden rounded-[28px] bg-panel ring-1 ring-stone-900/10 shadow-[0_30px_70px_-20px_rgba(28,25,23,0.35)]"
       style={{ opacity }}
     >
       <motion.div
@@ -132,19 +132,19 @@ export default function AnimeCard({ anime, mediaType, top, pending, onSwipe }: P
             ) : (
               <div
                 className="h-full w-full"
-                style={{ background: `linear-gradient(140deg, ${color}, #14141f)` }}
+                style={{ background: `linear-gradient(140deg, ${color}, #e7e5e4)` }}
               />
             )}
-            <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#12121c] to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-white to-transparent" />
 
             {score !== null && (
-              <div className="glass absolute right-3 top-3 rounded-full px-2.5 py-1 text-xs font-semibold text-amber-300">
+              <div className="glass absolute right-3 top-3 rounded-full px-2.5 py-1 text-xs font-semibold text-amber-600">
                 ★ {score}%
               </div>
             )}
 
             {anime.mediaListEntry && (
-              <div className="glass absolute left-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-medium text-slate-200">
+              <div className="glass absolute left-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-medium text-stone-700">
                 On your list: {formatStatus(anime.mediaListEntry.status, mediaType)}
               </div>
             )}
@@ -152,30 +152,30 @@ export default function AnimeCard({ anime, mediaType, top, pending, onSwipe }: P
 
           {/* Info */}
           <div className="relative flex min-h-0 flex-1 flex-col gap-1.5 px-5 pb-5 pt-3">
-            <h2 className="font-display line-clamp-2 text-lg font-bold leading-tight text-slate-50">
+            <h2 className="font-display line-clamp-2 text-lg font-bold leading-tight text-stone-900">
               {title}
             </h2>
             {altTitle && (
-              <p className="line-clamp-1 text-xs text-slate-500" title={altTitle}>
+              <p className="line-clamp-1 text-xs text-stone-500" title={altTitle}>
                 {altTitle}
               </p>
             )}
             {metaLine(anime) && (
-              <p className="text-xs font-medium tracking-wide text-slate-400">{metaLine(anime)}</p>
+              <p className="text-xs font-medium tracking-wide text-stone-500">{metaLine(anime)}</p>
             )}
 
             <div className="mt-0.5 flex flex-wrap gap-1.5">
               {anime.genres.slice(0, 3).map((genre) => (
                 <span
                   key={genre}
-                  className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-slate-300"
+                  className="rounded-full border border-stone-900/10 bg-stone-900/5 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-stone-600"
                 >
                   {genre}
                 </span>
               ))}
             </div>
 
-            <p className="mt-1 line-clamp-3 text-[13px] leading-relaxed text-slate-400">
+            <p className="mt-1 line-clamp-3 text-[13px] leading-relaxed text-stone-500">
               {cleanDescription(anime) || "No description available."}
             </p>
           </div>

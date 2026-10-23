@@ -32,21 +32,21 @@ export default function CategoryFilter({
       aria-label="Category filters"
     >
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="font-display text-sm font-semibold text-slate-200">
+        <h2 className="font-display text-sm font-semibold text-stone-800">
           Categories
         </h2>
         {hasSelection && (
           <button
             type="button"
             onClick={onClear}
-            className="text-[11px] font-medium text-slate-500 transition hover:text-slate-300"
+            className="text-[11px] font-medium text-stone-500 transition hover:text-stone-700"
           >
             Clear
           </button>
         )}
       </div>
 
-      <p className="mb-3 text-[11px] leading-relaxed text-slate-500">
+      <p className="mb-3 text-[11px] leading-relaxed text-stone-500">
         {hasSelection
           ? `Browsing random ${mediaTypeLabel} matching your picks.`
           : `Pick one or more to browse random ${mediaTypeLabel} by category.`}
@@ -63,8 +63,8 @@ export default function CategoryFilter({
               onClick={() => onToggle(genre)}
               className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${
                 active
-                  ? "border-indigo-400/60 bg-indigo-500/20 text-indigo-200"
-                  : "border-white/10 bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-200"
+                  ? "border-rose-500/40 bg-rose-500/10 text-rose-700"
+                  : "border-stone-900/10 bg-stone-900/5 text-stone-500 hover:bg-stone-900/10 hover:text-stone-700"
               }`}
             >
               {genre}
@@ -73,12 +73,12 @@ export default function CategoryFilter({
         })}
       </div>
 
-      <label className="mt-4 flex cursor-pointer items-center gap-2 border-t border-white/5 pt-3 text-[11px] text-slate-500 transition hover:text-slate-300">
+      <label className="mt-4 flex cursor-pointer items-center gap-2 border-t border-stone-900/10 pt-3 text-[11px] text-stone-500 transition hover:text-stone-700">
         <input
           type="checkbox"
           checked={randomize}
           onChange={(e) => onRandomizeChange(e.target.checked)}
-          className="h-3 w-3 accent-indigo-500"
+          className="h-3 w-3 accent-rose-600"
         />
         Shuffle results
       </label>

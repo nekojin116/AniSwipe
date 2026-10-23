@@ -33,7 +33,7 @@ export default function ActionBar({
         disabled={!canUndo}
         title="Undo last action (Z)"
         aria-label="Undo last action"
-        className="glass grid h-11 w-11 place-items-center rounded-full text-slate-300 transition hover:scale-105 hover:text-white disabled:pointer-events-none disabled:opacity-30"
+        className="glass grid h-11 w-11 place-items-center rounded-full text-stone-500 transition hover:scale-105 hover:text-stone-900 disabled:pointer-events-none disabled:opacity-30"
       >
         <UndoIcon className="h-4 w-4" />
       </button>
@@ -55,7 +55,7 @@ export default function ActionBar({
         disabled={disabled}
         title={planTitle}
         aria-label={isManga ? "Add to plan to read" : "Add to plan to watch"}
-        className="glass grid h-14 w-14 place-items-center rounded-full text-plan transition hover:scale-110 hover:bg-blue-500/10 active:scale-95 disabled:opacity-30"
+        className="glass grid h-14 w-14 place-items-center rounded-full text-plan transition hover:scale-110 hover:bg-amber-500/10 active:scale-95 disabled:opacity-30"
       >
         <BookmarkIcon className="h-5 w-5" />
       </button>
@@ -66,12 +66,12 @@ export default function ActionBar({
         disabled={disabled}
         title={watchedTitle}
         aria-label={isManga ? "Mark as read" : "Mark as watched"}
-        className="brand-gradient grid h-16 w-16 place-items-center rounded-full text-white shadow-[0_10px_30px_-8px_rgba(99,102,241,0.7)] transition hover:scale-105 active:scale-95 disabled:opacity-30"
+        className="brand-gradient grid h-16 w-16 place-items-center rounded-full text-white shadow-[0_10px_30px_-8px_rgba(225,29,72,0.55)] transition hover:scale-105 active:scale-95 disabled:opacity-30"
       >
         <CheckIcon className="h-7 w-7" strokeWidth={2.6} />
       </button>
 
-      <span className="ml-1 hidden select-none text-[11px] leading-tight text-slate-500 sm:block">
+      <span className="ml-1 hidden select-none text-[11px] leading-tight text-stone-500 sm:block">
         ← skip
         <br />→ {isManga ? "read" : "watched"}
         <br />↑ plan

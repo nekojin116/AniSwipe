@@ -34,11 +34,11 @@ export default function TopBar({
   onLogout,
 }: Props) {
   return (
-    <header className="sticky top-0 z-30 glass-strong border-b border-white/5">
+    <header className="sticky top-0 z-30 glass-strong border-b border-stone-900/10">
       <div className="mx-auto flex w-full max-w-5xl items-center gap-3 px-4 py-3">
         <div className="flex shrink-0 items-center gap-2">
           <LogoMark className="h-7 w-7" />
-          <span className="font-display hidden text-lg font-bold tracking-tight text-white sm:block">
+          <span className="font-display hidden text-lg font-bold tracking-tight text-stone-900 sm:block">
             AniSwipe
           </span>
         </div>
@@ -56,8 +56,8 @@ export default function TopBar({
               onClick={() => onMediaTypeChange(type)}
               className={`rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide transition ${
                 mediaType === type
-                  ? "bg-indigo-500/90 text-white shadow-[0_4px_12px_-4px_rgba(99,102,241,0.85)]"
-                  : "text-slate-500 hover:text-slate-300"
+                  ? "bg-rose-600 text-white shadow-[0_4px_12px_-4px_rgba(225,29,72,0.6)]"
+                  : "text-stone-500 hover:text-stone-700"
               }`}
             >
               {type === "ANIME" ? (
@@ -80,8 +80,8 @@ export default function TopBar({
               onClick={() => onDeckChange(deck.id)}
               className={`shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-medium transition ${
                 deckId === deck.id
-                  ? "brand-gradient text-white shadow-[0_6px_18px_-6px_rgba(99,102,241,0.8)]"
-                  : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
+                  ? "brand-gradient text-white shadow-[0_6px_18px_-6px_rgba(225,29,72,0.55)]"
+                  : "text-stone-500 hover:bg-stone-900/5 hover:text-stone-800"
               }`}
             >
               {deck.label}
@@ -91,16 +91,16 @@ export default function TopBar({
 
         <div className="flex shrink-0 items-center gap-2">
           {viewer ? (
-            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 py-1 pl-2.5 pr-1">
+            <div className="flex items-center gap-2 rounded-full border border-stone-900/10 bg-stone-900/5 py-1 pl-2.5 pr-1">
               <img
                 src={viewer.avatar?.large ?? undefined}
                 alt=""
-                className="h-6 w-6 rounded-full bg-white/10 object-cover"
+                className="h-6 w-6 rounded-full bg-stone-900/10 object-cover"
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).style.display = "none";
                 }}
               />
-              <span className="hidden max-w-[90px] truncate text-xs font-medium text-slate-300 sm:block">
+              <span className="hidden max-w-[90px] truncate text-xs font-medium text-stone-700 sm:block">
                 {viewer.name}
               </span>
               <button
@@ -108,7 +108,7 @@ export default function TopBar({
                 onClick={onLogout}
                 title="Log out"
                 aria-label="Log out"
-                className="grid h-6 w-6 place-items-center rounded-full text-slate-500 transition hover:bg-white/10 hover:text-white"
+                className="grid h-6 w-6 place-items-center rounded-full text-stone-500 transition hover:bg-stone-900/10 hover:text-stone-900"
               >
                 <LogoutIcon className="h-3.5 w-3.5" />
               </button>
@@ -117,7 +117,7 @@ export default function TopBar({
             <button
               type="button"
               onClick={onLogin}
-              className="brand-gradient rounded-full px-4 py-1.5 text-xs font-semibold text-white shadow-[0_6px_18px_-6px_rgba(99,102,241,0.8)] transition hover:scale-105"
+              className="brand-gradient rounded-full px-4 py-1.5 text-xs font-semibold text-white shadow-[0_6px_18px_-6px_rgba(225,29,72,0.55)] transition hover:scale-105"
             >
               Log in
             </button>
@@ -127,9 +127,9 @@ export default function TopBar({
 
       {/* Manga/manhwa/manhua origin filter — manga decks only */}
       {mediaType === "MANGA" && (
-        <div className="border-t border-white/5">
+        <div className="border-t border-stone-900/10">
           <div className="no-scrollbar mx-auto flex w-full max-w-5xl items-center gap-1.5 overflow-x-auto px-4 py-1.5">
-            <span className="shrink-0 pr-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+            <span className="shrink-0 pr-1 text-[10px] font-semibold uppercase tracking-wider text-stone-500">
               Origin
             </span>
             {MANGA_REGIONS.map((r) => (
@@ -143,8 +143,8 @@ export default function TopBar({
                 }`}
                 className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium transition ${
                   region === r.id
-                    ? "border border-indigo-400/60 bg-indigo-500/20 text-indigo-200"
-                    : "border border-transparent text-slate-500 hover:bg-white/5 hover:text-slate-300"
+                    ? "border border-rose-500/40 bg-rose-500/10 text-rose-700"
+                    : "border border-transparent text-stone-500 hover:bg-stone-900/5 hover:text-stone-700"
                 }`}
               >
                 {r.label}
@@ -156,8 +156,8 @@ export default function TopBar({
 
       {deckId === "search" && (
         <div className="mx-auto w-full max-w-5xl px-4 pb-3">
-          <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 focus-within:border-indigo-400/50">
-            <SearchIcon className="h-4 w-4 text-slate-500" />
+          <div className="flex items-center gap-2 rounded-xl border border-stone-900/10 bg-stone-900/[0.03] px-3 py-2 focus-within:border-rose-500/50">
+            <SearchIcon className="h-4 w-4 text-stone-400" />
             <input
               autoFocus
               value={searchInput}
@@ -167,7 +167,7 @@ export default function TopBar({
                   ? `Search ${regionDef(region).term} titles… (e.g. ${regionDef(region).example})`
                   : "Search anime titles… (e.g. Frieren)"
               }
-              className="w-full bg-transparent text-sm text-slate-100 outline-none placeholder:text-slate-500"
+              className="w-full bg-transparent text-sm text-stone-900 outline-none placeholder:text-stone-400"
             />
           </div>
         </div>
