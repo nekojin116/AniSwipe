@@ -24,6 +24,10 @@ interface Options {
   sortBy?: BrowseSort;
   /** Bulk snapshot of the viewer's list; null while guest/loading. */
   listed: ListedMap | null;
+  /** Locally skipped titles for the current media type. */
+  skipped: Set<number>;
+  /** Incremented when the user clears their skip list; triggers a refetch. */
+  skippedResetToken: number;
   enabled: boolean;
 }
 
@@ -52,6 +56,8 @@ export function useDeck({
   genres,
   sortBy,
   listed,
+  skipped,
+  skippedResetToken,
   enabled,
 }: Options) {
   const [items, setItems] = useState<Anime[]>([]);
@@ -70,6 +76,13 @@ export function useDeck({
   useEffect(() => {
     listedRef.current = listed;
   }, [listed]);
+
+  // Same idea for the skip list: swiping left must not refetch the deck, so
+  // `load` reads the latest set through a ref instead of taking it as a dep.
+  const skippedRef = useRef(skipped);
+  useEffect(() => {
+    skippedRef.current = skipped;
+  }, [skipped]);
 
   const load = useCallback(
     async (seq: number, page: number, replace: boolean) => {
@@ -90,6 +103,7 @@ export function useDeck({
           genres,
           sortBy,
           listed: listedRef.current,
+          skipped: skippedRef.current,
         });
         if (seq !== seqRef.current) return;
         pageRef.current = page;
@@ -116,7 +130,8 @@ export function useDeck({
     [deckId, search, showAdded, token, mediaType, region, genres, sortBy],
   );
 
-  // Reset whenever the deck definition changes.
+  // Reset whenever the deck definition changes, or the user clears their
+  // locally skipped titles (the ref is already updated by the effect above).
   useEffect(() => {
     seqRef.current += 1;
     const seq = seqRef.current;
@@ -127,7 +142,7 @@ export function useDeck({
     setError(null);
     setLoading(false);
     if (enabled) void load(seq, 1, true);
-  }, [deckId, search, showAdded, token, mediaType, region, genres, sortBy, enabled, load]);
+  }, [deckId, search, showAdded, token, mediaType, region, genres, sortBy, enabled, skippedResetToken, load]);
 
   // The bulk list snapshot landed (or showAdded flipped): hide anything on the
   // user's list that slipped into the queue, and backfill "On your list"

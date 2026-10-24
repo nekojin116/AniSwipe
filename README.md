@@ -19,6 +19,10 @@ planned, an episode-count histogram, format/status/country breakdowns, and a rel
 titles / hours (or chapters) / mean-score modes. It is computed on demand instead of AniList's
 once-a-day stats cache.
 
+Left-swiped titles are remembered locally per media type, so refreshing the page doesn't bring them
+back. A **Show N skipped … again** control under the deck restores them whenever you want a second
+look.
+
 ## Stack
 
 - [Vite](https://vitejs.dev/) + React + TypeScript
@@ -145,6 +149,11 @@ pair fails with `Cannot decrypt the authorization code`; a bad pair returns `inv
   or **Refresh** is a fresh request, unlike AniList's once-a-day stats page; guests see a login prompt.
 - **Swipes**: `SaveMediaListEntry(mediaId, status)` mutation; undo runs
   `DeleteMediaListEntry(id)` (or restores the previous status if the entry already existed).
+- **Local skips**: a left swipe stores the title id in `localStorage` (`aniswipe.skipped.v1`,
+  split by anime/manga) and every deck fetch filters that set out, so a refresh doesn’t resurrect
+  skipped titles. The list is capped at 5,000 ids per type. **Show N skipped … again** clears the
+  current type’s list and refetches the deck from page 1. Resetting is per media type, and skipped
+  ids never touch your AniList list.
 - **Rate limits**: AniList allows 90 req/min (currently 30/min during degraded service). Decks fetch
   40 titles per request and auto-pause + retry on `429`.
 

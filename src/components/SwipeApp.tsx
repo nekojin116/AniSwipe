@@ -5,9 +5,10 @@ import SwipeDeck, { type SwipeDeckHandle } from "./SwipeDeck";
 import type { Dir } from "./AnimeCard";
 import ActionBar from "./ActionBar";
 import Toast, { type ToastState } from "./Toast";
-import { AlertIcon, Spinner } from "./icons";
+import { AlertIcon, Spinner, UndoIcon } from "./icons";
 import CategoryFilter from "./CategoryFilter";
 import { useDeck } from "../hooks/useDeck";
+import { useSkipped } from "../hooks/useSkipped";
 import {
   AlError,
   decksFor,
@@ -118,6 +119,14 @@ export default function SwipeApp({
   const [toast, setToast] = useState<ToastState | null>(null);
   const [listed, setListed] = useState<ListedMap | null>(null);
 
+  const {
+    skipped,
+    count: skippedCount,
+    skip: rememberSkip,
+    reset: resetSkipped,
+    resetToken: skippedResetToken,
+  } = useSkipped(mediaType);
+
   const deckRef = useRef<SwipeDeckHandle>(null);
   const typeRef = useRef(mediaType);
 
@@ -195,6 +204,15 @@ export default function SwipeApp({
 
   const decks = useMemo(() => decksFor(mediaType, region), [mediaType, region]);
   const mediaNoun = mediaType === "MANGA" ? regionDef(region).term : "anime";
+  // Skips are stored per media type, not per origin filter, so the reset copy
+  // uses the umbrella term even while browsing a specific manga region.
+  const skipNoun = mediaType === "MANGA" ? "manga" : "anime";
+
+  const handleResetSkipped = useCallback(() => {
+    if (skippedCount === 0) return;
+    resetSkipped();
+    showToast(`Showing ${skippedCount} skipped ${skipNoun} again`, "info");
+  }, [skippedCount, resetSkipped, showToast, skipNoun]);
 
   // The search deck serves two modes: a text query, or a category browse.
   // With categories (and no query) it is ordered by the chosen sort.
@@ -210,6 +228,8 @@ export default function SwipeApp({
     genres,
     sortBy,
     listed,
+    skipped,
+    skippedResetToken,
     enabled: searchReady,
   });
   const { removeItem, pushFront } = deck;
@@ -267,6 +287,7 @@ export default function SwipeApp({
       removeItem(anime.id);
 
       if (dir === "left") {
+        rememberSkip(anime.id);
         setStats((s) => ({ ...s, skipped: s.skipped + 1 }));
         return;
       }
@@ -326,7 +347,7 @@ export default function SwipeApp({
           showToast(alErr.message, "err");
         });
     },
-    [removeItem, pushFront, token, showToast, onSessionExpired, mediaType],
+    [removeItem, pushFront, token, showToast, onSessionExpired, mediaType, rememberSkip],
   );
 
   const handleUndo = useCallback(async () => {
@@ -453,10 +474,15 @@ export default function SwipeApp({
     return {
       icon: <span className="text-3xl">🎉</span>,
       title: "You're all caught up!",
-      body: "You've swiped through this entire deck. Try another one.",
+      body:
+        skippedCount > 0
+          ? `You've swiped through this deck. ${skippedCount} skipped ${skipNoun} ${
+              skippedCount === 1 ? "is" : "are"
+            } hidden — show them again below if you want another look.`
+          : "You've swiped through this entire deck. Try another one.",
       switchDeck: true,
     };
-  }, [deckId, search, genres.length, mediaType, mediaNoun, deck.loading, deck.items.length, deck.hasNextPage, deck.error]);
+  }, [deckId, search, genres.length, mediaType, skipNoun, skippedCount, deck.loading, deck.items.length, deck.hasNextPage, deck.error]);
 
   const showEmpty = deck.items.length === 0 && !(deck.error && deck.loading);
 
@@ -653,6 +679,18 @@ export default function SwipeApp({
                 </>
               )}
             </div>
+
+            {skippedCount > 0 && (
+              <button
+                type="button"
+                onClick={handleResetSkipped}
+                title="Bring back the titles you skipped on this device"
+                className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-stone-900/10 bg-stone-900/[0.04] px-3 py-1 text-[11px] font-medium text-stone-500 transition hover:bg-stone-900/10 hover:text-stone-700"
+              >
+                <UndoIcon className="h-3 w-3" />
+                Show {skippedCount} skipped {skipNoun} again
+              </button>
+            )}
           </div>
         </div>
       </main>

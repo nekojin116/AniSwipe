@@ -334,6 +334,8 @@ export async function fetchDeckPage(opts: {
    */
   sortBy?: BrowseSort;
   listed?: ListedMap | null;
+  /** Locally skipped titles, hidden from every deck (per media type). */
+  skipped?: Set<number> | null;
 }): Promise<{ items: Anime[]; hasNextPage: boolean }> {
   const region = opts.region ?? "ALL";
   const decks = decksFor(opts.mediaType, region);
@@ -410,6 +412,7 @@ export async function fetchDeckPage(opts: {
       const entry = m.mediaListEntry ?? listedEntry;
       return entry && entry !== m.mediaListEntry ? { ...m, mediaListEntry: entry } : m;
     })
+    .filter((m) => !opts.skipped?.has(m.id))
     .filter(
       (m) =>
         m.status !== "NOT_YET_RELEASED" &&
