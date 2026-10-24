@@ -29,6 +29,12 @@ const FORMAT_LABELS: Record<string, string> = {
 
 const PRINT_FORMATS = new Set(["MANGA", "NOVEL", "ONE_SHOT"]);
 
+/** Human label for an AniList `MediaFormat` (falls back to the raw enum). */
+export function formatLabel(format: string | null | undefined): string {
+  if (!format) return "Unknown";
+  return FORMAT_LABELS[format] ?? format;
+}
+
 export function metaLine(anime: Anime): string {
   const parts: string[] = [];
   if (anime.seasonYear) parts.push(String(anime.seasonYear));

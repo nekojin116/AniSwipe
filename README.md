@@ -14,6 +14,11 @@ an experimental **Manga** section alongside anime, including an origin filter
 that live-updates a popularity/newest/random browse. Titles already on your AniList are hidden by
 default (requires login — the filter uses your authenticated list).
 
+A **Stats** button opens a live snapshot of your list — totals, episodes/chapters, days watched and
+planned, an episode-count histogram, format/status/country breakdowns, and a release-year chart with
+titles / hours (or chapters) / mean-score modes. It is computed on demand instead of AniList's
+once-a-day stats cache.
+
 ## Stack
 
 - [Vite](https://vitejs.dev/) + React + TypeScript
@@ -132,6 +137,12 @@ pair fails with `Cannot decrypt the authorization code`; a bad pair returns `inv
   badges are backfilled if the API returns a null entry. The snapshot updates optimistically on
   every save/undo. **Guest mode cannot filter**: `mediaListEntry` requires authentication, so the
   UI shows an explicit "Filter off in guest mode" notice instead.
+- **Stats**: the **Stats** button in the top bar pulls the viewer's whole list in one
+  `MediaListCollection` request (custom lists skipped, entries deduped), then aggregates it in the
+  browser — totals, episodes/chapters, runtime (24 min per episode when `duration` is missing),
+  planned days, episode/chapter buckets, format/status/country donuts, and release-year series.
+  The anime/manga toggle switches the dataset and the page adapts its labels and metrics. Every visit
+  or **Refresh** is a fresh request, unlike AniList's once-a-day stats page; guests see a login prompt.
 - **Swipes**: `SaveMediaListEntry(mediaId, status)` mutation; undo runs
   `DeleteMediaListEntry(id)` (or restores the previous status if the entry already existed).
 - **Rate limits**: AniList allows 90 req/min (currently 30/min during degraded service). Decks fetch

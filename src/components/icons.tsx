@@ -113,6 +113,87 @@ export function AlertIcon(props: Props) {
   );
 }
 
+export function ChartIcon(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M3 3v18h18" />
+      <path d="M7 15v-4M12 15V7M17 15v-7" />
+    </svg>
+  );
+}
+
+export function PlayCircleIcon(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m10 8.5 5.5 3.5-5.5 3.5z" />
+    </svg>
+  );
+}
+
+export function ClockIcon(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3.5 2" />
+    </svg>
+  );
+}
+
+export function CalendarIcon(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M16 3v4M8 3v4M3 11h18" />
+    </svg>
+  );
+}
+
+export function RefreshIcon(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M20 11a8 8 0 1 0-2.4 5.7" />
+      <path d="M20 4v7h-7" />
+    </svg>
+  );
+}
+
+export function LockIcon(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="4" y="10" width="16" height="11" rx="2" />
+      <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+    </svg>
+  );
+}
+
+export function LibraryIcon(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="m12 3 9 5-9 5-9-5 9-5Z" />
+      <path d="m3 13 9 5 9-5" />
+    </svg>
+  );
+}
+
+export function BookOpenIcon(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 6.5C10.5 5 8 4.5 4 4.5v14c4 0 6.5.5 8 2 1.5-1.5 4-2 8-2v-14c-4 0-6.5.5-8 2Z" />
+      <path d="M12 6.5v14" />
+    </svg>
+  );
+}
+
+export function BookIcon(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M5 4h10a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4Z" />
+      <path d="M5 17a3 3 0 0 1 3-3h10" />
+    </svg>
+  );
+}
+
 export function Spinner(props: Props) {
   return (
     <svg {...base} {...props} className={`animate-spin-slow ${props.className ?? ""}`}>

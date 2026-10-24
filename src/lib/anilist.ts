@@ -81,6 +81,28 @@ export interface Viewer {
   avatar?: { large?: string | null; medium?: string | null } | null;
 }
 
+/** Media fields needed to aggregate list statistics (no artwork/titles). */
+export interface StatsMedia {
+  format?: string | null;
+  episodes?: number | null;
+  chapters?: number | null;
+  duration?: number | null;
+  countryOfOrigin?: string | null;
+  seasonYear?: number | null;
+  startDate?: { year?: number | null } | null;
+}
+
+/** One entry of the viewer's list, enriched with the fields stats need. */
+export interface StatsEntry {
+  id: number;
+  mediaId: number;
+  status: string;
+  progress: number;
+  progressVolumes?: number | null;
+  score: number;
+  media: StatsMedia;
+}
+
 export type DeckId = "popular" | "top" | "season" | "search";
 
 /**
@@ -173,6 +195,33 @@ const LISTED_QUERY = `
   }
 `;
 
+const STATS_QUERY = `
+  query StatsList($userId: Int, $type: MediaType!) {
+    MediaListCollection(userId: $userId, type: $type) {
+      lists {
+        isCustomList
+        entries {
+          id
+          mediaId
+          status
+          progress
+          progressVolumes
+          score(format: POINT_100)
+          media {
+            format
+            episodes
+            chapters
+            duration
+            countryOfOrigin
+            seasonYear
+            startDate { year }
+          }
+        }
+      }
+    }
+  }
+`;
+
 const SAVE_MUTATION = `
   mutation ($mediaId: Int, $status: MediaListStatus) {
     SaveMediaListEntry(mediaId: $mediaId, status: $status) { id mediaId status }
@@ -222,6 +271,40 @@ export async function fetchListedEntries(
     if (!data.Page?.pageInfo?.hasNextPage) break;
   }
   return map;
+}
+
+/**
+ * Fetch the viewer's complete list (both standard and split lists, without
+ * custom-list duplicates) for the statistics page. AniList's
+ * `MediaListCollection` returns every entry in a single request, so this is
+ * always a live snapshot — no 24-hour stats cache involved.
+ */
+export async function fetchStatsEntries(
+  userId: number,
+  mediaType: MediaType,
+  token: string,
+): Promise<StatsEntry[]> {
+  const data = await alFetch<{
+    MediaListCollection: {
+      lists:
+        | {
+            isCustomList: boolean;
+            entries: StatsEntry[] | null;
+          }[]
+        | null;
+    } | null;
+  }>(STATS_QUERY, { userId, type: mediaType }, token);
+
+  // Split completed lists are fine (entries differ); custom lists duplicate
+  // entries, so skip them. Dedupe by entry id as a final guard.
+  const byId = new Map<number, StatsEntry>();
+  for (const list of data.MediaListCollection?.lists ?? []) {
+    if (list.isCustomList) continue;
+    for (const entry of list.entries ?? []) {
+      if (!byId.has(entry.id)) byId.set(entry.id, entry);
+    }
+  }
+  return [...byId.values()];
 }
 
 /** Fisher–Yates shuffle (returns a new array, leaves the input untouched). */

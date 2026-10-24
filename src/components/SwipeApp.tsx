@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import TopBar from "./TopBar";
+import StatsPage from "./StatsPage";
 import SwipeDeck, { type SwipeDeckHandle } from "./SwipeDeck";
 import type { Dir } from "./AnimeCard";
 import ActionBar from "./ActionBar";
@@ -108,6 +109,7 @@ export default function SwipeApp({
   const [genres, setGenres] = useState<string[]>(loadStoredGenres);
   const [sortBy, setSortBy] = useState<BrowseSort>(loadStoredSort);
   const [deckId, setDeckId] = useState<DeckId>("popular");
+  const [view, setView] = useState<"deck" | "stats">("deck");
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [showAdded, setShowAdded] = useState(false);
@@ -233,6 +235,20 @@ export default function SwipeApp({
     },
     [mediaType],
   );
+
+  /* ------------------------------ navigation ------------------------------- */
+
+  const selectDeck = useCallback((id: DeckId) => {
+    setDeckId(id);
+    setView("deck");
+  }, []);
+
+  const openStats = useCallback(() => setView("stats"), []);
+
+  const browseFromStats = useCallback(() => {
+    setDeckId("popular");
+    setView("deck");
+  }, []);
 
   /* ------------------------------- categories ------------------------------ */
 
@@ -371,6 +387,7 @@ export default function SwipeApp({
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (view !== "deck") return;
       const target = event.target as HTMLElement | null;
       if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) return;
       switch (event.key) {
@@ -394,7 +411,7 @@ export default function SwipeApp({
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [requestSwipe, handleUndo]);
+  }, [requestSwipe, handleUndo, view]);
 
   /* --------------------------------- derived -------------------------------- */
 
@@ -443,22 +460,45 @@ export default function SwipeApp({
 
   const showEmpty = deck.items.length === 0 && !(deck.error && deck.loading);
 
+  const topBar = (
+    <TopBar
+      viewer={viewer}
+      decks={decks}
+      deckId={deckId}
+      mediaType={mediaType}
+      region={region}
+      view={view}
+      onMediaTypeChange={switchMediaType}
+      onDeckChange={selectDeck}
+      onRegionChange={setRegion}
+      onStats={openStats}
+      searchInput={searchInput}
+      onSearchChange={setSearchInput}
+      onLogin={onLogin}
+      onLogout={onLogout}
+    />
+  );
+
+  if (view === "stats") {
+    return (
+      <div className="relative z-10 flex min-h-full flex-col">
+        {topBar}
+        <StatsPage
+          token={token}
+          viewer={viewer}
+          mediaType={mediaType}
+          onLogin={onLogin}
+          onBrowse={browseFromStats}
+          onSessionExpired={onSessionExpired}
+        />
+        <Toast toast={toast} />
+      </div>
+    );
+  }
+
   return (
     <div className="relative z-10 flex min-h-full flex-col">
-      <TopBar
-        viewer={viewer}
-        decks={decks}
-        deckId={deckId}
-        mediaType={mediaType}
-        region={region}
-        onMediaTypeChange={switchMediaType}
-        onDeckChange={setDeckId}
-        onRegionChange={setRegion}
-        searchInput={searchInput}
-        onSearchChange={setSearchInput}
-        onLogin={onLogin}
-        onLogout={onLogout}
-      />
+      {topBar}
 
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center px-4 pb-8 pt-4">
         <div className="flex w-full flex-1 items-start justify-center gap-6">

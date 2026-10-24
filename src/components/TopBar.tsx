@@ -1,6 +1,6 @@
 import type { DeckDef, DeckId, MediaType, Region, Viewer } from "../lib/anilist";
 import { MANGA_REGIONS, regionDef } from "../lib/anilist";
-import { LogoMark, LogoutIcon, SearchIcon } from "./icons";
+import { ChartIcon, LogoMark, LogoutIcon, SearchIcon } from "./icons";
 
 interface Props {
   viewer: Viewer | null;
@@ -8,9 +8,12 @@ interface Props {
   deckId: DeckId;
   mediaType: MediaType;
   region: Region;
+  /** Deck view vs. the stats page. */
+  view: "deck" | "stats";
   onMediaTypeChange: (type: MediaType) => void;
   onDeckChange: (id: DeckId) => void;
   onRegionChange: (region: Region) => void;
+  onStats: () => void;
   searchInput: string;
   onSearchChange: (value: string) => void;
   onLogin: () => void;
@@ -25,9 +28,11 @@ export default function TopBar({
   deckId,
   mediaType,
   region,
+  view,
   onMediaTypeChange,
   onDeckChange,
   onRegionChange,
+  onStats,
   searchInput,
   onSearchChange,
   onLogin,
@@ -79,7 +84,7 @@ export default function TopBar({
               type="button"
               onClick={() => onDeckChange(deck.id)}
               className={`shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-medium transition ${
-                deckId === deck.id
+                view === "deck" && deckId === deck.id
                   ? "brand-gradient text-white shadow-[0_6px_18px_-6px_rgba(225,29,72,0.55)]"
                   : "text-stone-500 hover:bg-stone-900/5 hover:text-stone-800"
               }`}
@@ -90,6 +95,22 @@ export default function TopBar({
         </nav>
 
         <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={onStats}
+            aria-pressed={view === "stats"}
+            aria-label="Your stats"
+            title="Your live AniList stats"
+            className={`flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-semibold transition ${
+              view === "stats"
+                ? "brand-gradient text-white shadow-[0_6px_18px_-6px_rgba(225,29,72,0.55)]"
+                : "glass text-stone-600 hover:bg-stone-900/5 hover:text-stone-900"
+            }`}
+          >
+            <ChartIcon className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Stats</span>
+          </button>
+
           {viewer ? (
             <div className="flex items-center gap-2 rounded-full border border-stone-900/10 bg-stone-900/5 py-1 pl-2.5 pr-1">
               <img
@@ -126,7 +147,7 @@ export default function TopBar({
       </div>
 
       {/* Manga/manhwa/manhua origin filter — manga decks only */}
-      {mediaType === "MANGA" && (
+      {view === "deck" && mediaType === "MANGA" && (
         <div className="border-t border-stone-900/10">
           <div className="no-scrollbar mx-auto flex w-full max-w-5xl items-center gap-1.5 overflow-x-auto px-4 py-1.5">
             <span className="shrink-0 pr-1 text-[10px] font-semibold uppercase tracking-wider text-stone-500">
@@ -154,7 +175,7 @@ export default function TopBar({
         </div>
       )}
 
-      {deckId === "search" && (
+      {view === "deck" && deckId === "search" && (
         <div className="mx-auto w-full max-w-5xl px-4 pb-3">
           <div className="flex items-center gap-2 rounded-xl border border-stone-900/10 bg-stone-900/[0.03] px-3 py-2 focus-within:border-rose-500/50">
             <SearchIcon className="h-4 w-4 text-stone-400" />
