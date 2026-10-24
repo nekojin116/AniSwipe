@@ -242,7 +242,7 @@ export async function fetchDeckPage(opts: {
   token: string | null;
   mediaType: MediaType;
   region?: Region;
-  /** Genre display-form names to filter by (AND semantics via genre_in). */
+  /** Search-deck genre filter (AND semantics via genre_in); other decks ignore it. */
   genres?: string[];
   /**
    * Order for a category browse (search deck, no text query). "random" keeps
@@ -299,9 +299,11 @@ export async function fetchDeckPage(opts: {
   // Manga/manhwa/manhua origin filter. AniList treats an explicit null as
   // "match nothing", so the variable must be omitted entirely for "All".
   if (opts.mediaType === "MANGA" && region !== "ALL") variables.country = region;
-  // Genre filter (AND). Only send when non-empty — an empty list would be a
-  // no-op but wastes bytes and risks odd API behavior.
-  if (genres.length > 0) variables.genre = genres;
+  // Genre filter (AND) belongs to the search deck's category browse. The
+  // selection persists while the user visits other decks, but must not narrow
+  // Popular/Top rated/Ongoing. Only send when non-empty — an empty list would
+  // be a no-op but wastes bytes and risks odd API behavior.
+  if (opts.deckId === "search" && genres.length > 0) variables.genre = genres;
 
   const data = await alFetch<{
     Page: {

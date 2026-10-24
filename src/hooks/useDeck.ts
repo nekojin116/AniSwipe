@@ -18,7 +18,7 @@ interface Options {
   mediaType: MediaType;
   /** Manga/manhwa/manhua origin filter (ignored for anime). */
   region: Region;
-  /** Genre display-form names; empty array means "no genre filter". */
+  /** Genre display-form names; search deck only (empty means no filter). */
   genres: string[];
   /** Order for the search deck's category browse (ignored elsewhere). */
   sortBy?: BrowseSort;
