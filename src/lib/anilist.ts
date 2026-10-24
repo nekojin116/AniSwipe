@@ -83,6 +83,12 @@ export interface Viewer {
 
 export type DeckId = "popular" | "top" | "season" | "search";
 
+/**
+ * Ordering for the search deck's category browse. Text queries always stay
+ * relevance-sorted; this only applies while browsing by genre with no query.
+ */
+export type BrowseSort = "popular" | "newest" | "random";
+
 export interface DeckDef {
   id: DeckId;
   label: string;
@@ -148,10 +154,10 @@ const VIEWER_QUERY = `
 `;
 
 const DECK_QUERY = `
-  query DeckPage($page: Int!, $perPage: Int!, $type: MediaType!, $sort: [MediaSort], $search: String, $status: MediaStatus, $country: CountryCode, $genre: [String]) {
+  query DeckPage($page: Int!, $perPage: Int!, $type: MediaType!, $sort: [MediaSort], $search: String, $status: MediaStatus, $statusIn: [MediaStatus], $country: CountryCode, $genre: [String]) {
     Page(page: $page, perPage: $perPage) {
       pageInfo { hasNextPage currentPage total }
-      media(type: $type, countryOfOrigin: $country, genre_in: $genre, sort: $sort, search: $search, status: $status, isAdult: false) {
+      media(type: $type, countryOfOrigin: $country, genre_in: $genre, sort: $sort, search: $search, status: $status, status_in: $statusIn, isAdult: false) {
         ${MEDIA_FIELDS}
       }
     }
@@ -239,11 +245,11 @@ export async function fetchDeckPage(opts: {
   /** Genre display-form names to filter by (AND semantics via genre_in). */
   genres?: string[];
   /**
-   * Randomize which slice of the result set we page through. AniList has no
-   * random sort, so we jump to a random page (bounded by `total`) and shuffle
-   * client-side. Used by the search deck when no query is typed.
+   * Order for a category browse (search deck, no text query). "random" keeps
+   * the randomized-page behavior; "popular"/"newest" page through AniList's
+   * ordered results from the top so well-known releases come first.
    */
-  random?: boolean;
+  sortBy?: BrowseSort;
   listed?: ListedMap | null;
 }): Promise<{ items: Anime[]; hasNextPage: boolean }> {
   const region = opts.region ?? "ALL";
@@ -251,26 +257,44 @@ export async function fetchDeckPage(opts: {
   const def = decks.find((d) => d.id === opts.deckId) ?? decks[0];
   const genres = opts.genres ?? [];
 
+  // Category browsing (search deck, no text query) can be ordered explicitly.
+  // Text queries stay relevance-sorted; other decks keep their own sort.
+  const categoryBrowse = opts.deckId === "search" && !opts.search;
+  const sortBy = opts.sortBy ?? "random";
+  const random = categoryBrowse && sortBy === "random";
+
   // AniList has no random sort, so for a randomized browse we jump to a
   // genuinely random page (bounded by `total`, which AniList caps at 5000)
   // and shuffle client-side. Page 1 stays ordered so the first load still
   // surfaces recognizable hits.
   const PER_PAGE = 40;
   let requestedPage = opts.page;
-  if (opts.random && opts.page > 1) {
+  if (random && opts.page > 1) {
     // Over-fetch a little so the shuffle has more than one page's worth to
     // mix; the bound keeps us inside AniList's 5000-result window.
     const maxPage = Math.max(1, Math.min(Math.ceil(5000 / PER_PAGE), 125));
     requestedPage = 1 + Math.floor(Math.random() * maxPage);
   }
 
+  let sort = def.sort;
+  if (categoryBrowse && sortBy === "popular") sort = ["POPULARITY_DESC"];
+  else if (categoryBrowse && sortBy === "newest") sort = ["START_DATE_DESC"];
+
   const variables: Record<string, unknown> = {
     page: requestedPage,
     perPage: PER_PAGE,
     type: opts.mediaType,
-    sort: def.sort,
+    sort,
   };
   if (def.status) variables.status = def.status;
+  // "Newest" must exclude unreleased and cancelled titles at the API level:
+  // START_DATE_DESC orders future announcements first, and page 1 can be 40/40
+  // upcoming — the client-side filter would discard them all and the deck would
+  // silently page through several empty responses before showing a card.
+  // Cancelled entries also sort first because their start date is null.
+  if (categoryBrowse && sortBy === "newest") {
+    variables.statusIn = ["FINISHED", "RELEASING", "HIATUS"];
+  }
   if (opts.deckId === "search" && opts.search) variables.search = opts.search;
   // Manga/manhwa/manhua origin filter. AniList treats an explicit null as
   // "match nothing", so the variable must be omitted entirely for "All".
@@ -289,7 +313,7 @@ export async function fetchDeckPage(opts: {
   let media = data.Page?.media ?? [];
 
   // Shuffle so a random page doesn't just replay AniList's popularity order.
-  if (opts.random && opts.page > 1) {
+  if (random && opts.page > 1) {
     media = shuffle(media);
   }
 

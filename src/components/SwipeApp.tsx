@@ -16,6 +16,7 @@ import {
   regionDef,
   saveEntry,
   type Anime,
+  type BrowseSort,
   type DeckId,
   type ListedMap,
   type MediaType,
@@ -52,6 +53,7 @@ const EMPTY_STATS: Stats = { completed: 0, planning: 0, skipped: 0 };
 const MEDIA_TYPE_KEY = "aniswipe.mediaType";
 const REGION_KEY = "aniswipe.region";
 const GENRES_KEY = "aniswipe.genres";
+const SORT_KEY = "aniswipe.browseSort";
 
 function loadStoredType(): MediaType {
   try {
@@ -84,6 +86,15 @@ function loadStoredGenres(): string[] {
   }
 }
 
+function loadStoredSort(): BrowseSort {
+  try {
+    const value = localStorage.getItem(SORT_KEY);
+    return value === "newest" || value === "random" ? value : "popular";
+  } catch {
+    return "popular";
+  }
+}
+
 export default function SwipeApp({
   token,
   viewer,
@@ -95,7 +106,7 @@ export default function SwipeApp({
   const [mediaType, setMediaType] = useState<MediaType>(loadStoredType);
   const [region, setRegion] = useState<Region>(loadStoredRegion);
   const [genres, setGenres] = useState<string[]>(loadStoredGenres);
-  const [randomize, setRandomize] = useState(true);
+  const [sortBy, setSortBy] = useState<BrowseSort>(loadStoredSort);
   const [deckId, setDeckId] = useState<DeckId>("popular");
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -137,6 +148,14 @@ export default function SwipeApp({
     }
   }, [genres]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(SORT_KEY, sortBy);
+    } catch {
+      // ignore
+    }
+  }, [sortBy]);
+
   const showToast = useCallback((message: string, kind: ToastState["kind"] = "info") => {
     setToast({ id: Date.now(), message, kind });
   }, []);
@@ -176,10 +195,9 @@ export default function SwipeApp({
   const mediaNoun = mediaType === "MANGA" ? regionDef(region).term : "anime";
 
   // The search deck serves two modes: a text query, or a category browse.
-  // With categories (and no query) it randomizes so you keep discovering.
+  // With categories (and no query) it is ordered by the chosen sort.
   const searchReady =
     deckId !== "search" || search.length >= 2 || genres.length > 0;
-  const randomBrowse = deckId === "search" && search.length < 2 && randomize;
   const deck = useDeck({
     deckId,
     search,
@@ -188,7 +206,7 @@ export default function SwipeApp({
     mediaType,
     region,
     genres,
-    random: randomBrowse,
+    sortBy,
     listed,
     enabled: searchReady,
   });
@@ -380,7 +398,14 @@ export default function SwipeApp({
 
   /* --------------------------------- derived -------------------------------- */
 
-  const hint = decks.find((d) => d.id === deckId)?.hint ?? "";
+  const hint = useMemo(() => {
+    const fallback = decks.find((d) => d.id === deckId)?.hint ?? "";
+    // Text queries stay relevance-sorted; category browsing describes its sort.
+    if (deckId !== "search" || search.length >= 2 || genres.length === 0) return fallback;
+    const lead =
+      sortBy === "newest" ? "Newest" : sortBy === "random" ? "Random" : "Most popular";
+    return `${lead} ${genres.join(" · ")} ${mediaNoun}`;
+  }, [decks, deckId, search, sortBy, genres, mediaNoun]);
   const totalSwipes = stats.completed + stats.planning + stats.skipped;
   const topAnime = deck.items[0];
 
@@ -445,148 +470,150 @@ export default function SwipeApp({
                 selected={genres}
                 onToggle={toggleGenre}
                 onClear={clearGenres}
-                randomize={randomize}
-                onRandomizeChange={setRandomize}
+                sortBy={sortBy}
+                onSortChange={setSortBy}
                 mediaTypeLabel={mediaNoun}
               />
             </div>
           )}
 
+          {/* Deck column — the deck and all its controls share this column so
+              the action bar and stats stay aligned under the cards. */}
           <div className="flex w-full flex-col items-center">
             {/* Deck meta row */}
             <div className="mb-3 flex w-full max-w-[400px] items-center justify-between gap-3">
               <p className="truncate text-xs text-stone-500">{hint}</p>
-          {!isGuest ? (
-            <label
-              className="flex shrink-0 cursor-pointer items-center gap-1.5 text-[11px] text-stone-500 transition hover:text-stone-700"
-              title="Hide titles that are already on your AniList"
-            >
-              <input
-                type="checkbox"
-                checked={!showAdded}
-                onChange={(e) => setShowAdded(!e.target.checked)}
-                className="h-3 w-3 accent-rose-600"
-              />
-              Hide already-added
-            </label>
-          ) : (
-            <span
-              className="shrink-0 rounded-full border border-amber-500/40 bg-amber-400/15 px-2 py-0.5 text-[10px] font-medium text-amber-800"
-              title="Without your AniList login the app can't know what you've watched, so nothing is filtered. Log in to hide titles you've already added."
-            >
-              Filter off in guest mode
-            </span>
-          )}
-        </div>
-
-        {/* Deck */}
-        <div className="relative h-[min(560px,58vh)] w-full max-w-[400px] min-h-[380px]">
-          <SwipeDeck ref={deckRef} items={deck.items} mediaType={mediaType} onSwipe={handleSwipe} />
-
-          {showEmpty && (
-            <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-3 rounded-[28px] border border-dashed border-stone-900/10 bg-stone-900/[0.03] px-8 text-center">
-              {emptyPanel.icon}
-              <h3 className="font-display text-lg font-semibold text-stone-900">
-                {emptyPanel.title}
-              </h3>
-              <p className="max-w-[260px] text-sm text-stone-500">{emptyPanel.body}</p>
-              {emptyPanel.retry && (
-                <button
-                  type="button"
-                  onClick={deck.retry}
-                  className="brand-gradient rounded-full px-5 py-2 text-sm font-semibold text-white transition hover:scale-105"
+              {!isGuest ? (
+                <label
+                  className="flex shrink-0 cursor-pointer items-center gap-1.5 text-[11px] text-stone-500 transition hover:text-stone-700"
+                  title="Hide titles that are already on your AniList"
                 >
-                  Try again
-                </button>
+                  <input
+                    type="checkbox"
+                    checked={!showAdded}
+                    onChange={(e) => setShowAdded(!e.target.checked)}
+                    className="h-3 w-3 accent-rose-600"
+                  />
+                  Hide already-added
+                </label>
+              ) : (
+                <span
+                  className="shrink-0 rounded-full border border-amber-500/40 bg-amber-400/15 px-2 py-0.5 text-[10px] font-medium text-amber-800"
+                  title="Without your AniList login the app can't know what you've watched, so nothing is filtered. Log in to hide titles you've already added."
+                >
+                  Filter off in guest mode
+                </span>
               )}
-              {emptyPanel.switchDeck && (
-                <div className="mt-1 flex flex-wrap justify-center gap-2">
-                  {decks.filter((d) => d.id !== deckId && d.id !== "search").map((d) => (
+            </div>
+
+            {/* Deck */}
+            <div className="relative h-[min(560px,58vh)] w-full max-w-[400px] min-h-[380px]">
+              <SwipeDeck ref={deckRef} items={deck.items} mediaType={mediaType} onSwipe={handleSwipe} />
+
+              {showEmpty && (
+                <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-3 rounded-[28px] border border-dashed border-stone-900/10 bg-stone-900/[0.03] px-8 text-center">
+                  {emptyPanel.icon}
+                  <h3 className="font-display text-lg font-semibold text-stone-900">
+                    {emptyPanel.title}
+                  </h3>
+                  <p className="max-w-[260px] text-sm text-stone-500">{emptyPanel.body}</p>
+                  {emptyPanel.retry && (
                     <button
-                      key={d.id}
                       type="button"
-                      onClick={() => setDeckId(d.id)}
-                      className="glass rounded-full px-4 py-1.5 text-xs font-medium text-stone-700 transition hover:bg-stone-900/5"
+                      onClick={deck.retry}
+                      className="brand-gradient rounded-full px-5 py-2 text-sm font-semibold text-white transition hover:scale-105"
                     >
-                      {d.label}
+                      Try again
                     </button>
-                  ))}
+                  )}
+                  {emptyPanel.switchDeck && (
+                    <div className="mt-1 flex flex-wrap justify-center gap-2">
+                      {decks.filter((d) => d.id !== deckId && d.id !== "search").map((d) => (
+                        <button
+                          key={d.id}
+                          type="button"
+                          onClick={() => setDeckId(d.id)}
+                          className="glass rounded-full px-4 py-1.5 text-xs font-medium text-stone-700 transition hover:bg-stone-900/5"
+                        >
+                          {d.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Non-blocking error banner (deck still has cards) */}
+              {deck.error && deck.items.length > 0 && (
+                <div className="absolute inset-x-0 bottom-0 z-40 flex items-center justify-center gap-2 rounded-b-[24px] bg-rose-500/10 px-4 py-2 text-xs text-rose-700 backdrop-blur">
+                  <AlertIcon className="h-3.5 w-3.5" />
+                  {deck.error.message}
                 </div>
               )}
             </div>
-          )}
 
-          {/* Non-blocking error banner (deck still has cards) */}
-          {deck.error && deck.items.length > 0 && (
-            <div className="absolute inset-x-0 bottom-0 z-40 flex items-center justify-center gap-2 rounded-b-[24px] bg-rose-500/10 px-4 py-2 text-xs text-rose-700 backdrop-blur">
-              <AlertIcon className="h-3.5 w-3.5" />
-              {deck.error.message}
+            <p className="mt-4 select-none text-center text-[11px] text-stone-500">
+              {topAnime
+                ? `Drag the card — ${displayTitle(topAnime)}`
+                : "Use the buttons or arrow keys to swipe"}
+            </p>
+
+            <div className="mt-3">
+              <ActionBar
+                mediaType={mediaType}
+                onUndo={() => void handleUndo()}
+                onSkip={() => requestSwipe("left")}
+                onPlan={() => requestSwipe("up")}
+                onWatched={() => requestSwipe("right")}
+                canUndo={Boolean(lastAction)}
+                disabled={!topAnime}
+              />
             </div>
-          )}
-        </div>
 
-        <p className="mt-4 select-none text-center text-[11px] text-stone-500">
-          {topAnime
-            ? `Drag the card — ${displayTitle(topAnime)}`
-            : "Use the buttons or arrow keys to swipe"}
-        </p>
-          </div>
-        </div>
+            {isGuest && (
+              <div className="glass mt-5 flex items-center gap-3 rounded-full px-4 py-2 text-xs text-stone-500">
+                <span>
+                  Browsing as a guest — swipes aren&apos;t saved, and watched titles aren&apos;t
+                  hidden.
+                </span>
+                <button
+                  type="button"
+                  onClick={onLogin}
+                  className="brand-gradient rounded-full px-3 py-1 text-[11px] font-semibold text-white transition hover:scale-105"
+                >
+                  Log in to filter
+                </button>
+              </div>
+            )}
 
-        <div className="mt-3">
-          <ActionBar
-            mediaType={mediaType}
-            onUndo={() => void handleUndo()}
-            onSkip={() => requestSwipe("left")}
-            onPlan={() => requestSwipe("up")}
-            onWatched={() => requestSwipe("right")}
-            canUndo={Boolean(lastAction)}
-            disabled={!topAnime}
-          />
-        </div>
-
-        {isGuest && (
-          <div className="glass mt-5 flex items-center gap-3 rounded-full px-4 py-2 text-xs text-stone-500">
-            <span>
-              Browsing as a guest — swipes aren&apos;t saved, and watched titles aren&apos;t
-              hidden.
-            </span>
-            <button
-              type="button"
-              onClick={onLogin}
-              className="brand-gradient rounded-full px-3 py-1 text-[11px] font-semibold text-white transition hover:scale-105"
-            >
-              Log in to filter
-            </button>
-          </div>
-        )}
-
-        {/* Session stats */}
-        <div className="mt-6 flex items-center gap-4 text-xs text-stone-500">
-          <span>
-            <strong className="font-semibold text-rose-600">{stats.completed}</strong>{" "}
-            {mediaType === "MANGA" ? "read" : "watched"}
-          </span>
-          <span className="text-stone-300">•</span>
-          <span>
-            <strong className="font-semibold text-amber-600">{stats.planning}</strong> planned
-          </span>
-          <span className="text-stone-300">•</span>
-          <span>
-            <strong className="font-semibold text-stone-400">{stats.skipped}</strong> skipped
-          </span>
-          {totalSwipes > 0 && (
-            <>
+            {/* Session stats */}
+            <div className="mt-6 flex items-center gap-4 text-xs text-stone-500">
+              <span>
+                <strong className="font-semibold text-rose-600">{stats.completed}</strong>{" "}
+                {mediaType === "MANGA" ? "read" : "watched"}
+              </span>
               <span className="text-stone-300">•</span>
-              <button
-                type="button"
-                onClick={() => setStats(EMPTY_STATS)}
-                className="text-stone-500 underline-offset-2 transition hover:text-stone-700 hover:underline"
-              >
-                reset
-              </button>
-            </>
-          )}
+              <span>
+                <strong className="font-semibold text-amber-600">{stats.planning}</strong> planned
+              </span>
+              <span className="text-stone-300">•</span>
+              <span>
+                <strong className="font-semibold text-stone-400">{stats.skipped}</strong> skipped
+              </span>
+              {totalSwipes > 0 && (
+                <>
+                  <span className="text-stone-300">•</span>
+                  <button
+                    type="button"
+                    onClick={() => setStats(EMPTY_STATS)}
+                    className="text-stone-500 underline-offset-2 transition hover:text-stone-700 hover:underline"
+                  >
+                    reset
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </main>
 

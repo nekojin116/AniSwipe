@@ -3,6 +3,7 @@ import {
   AlError,
   fetchDeckPage,
   type Anime,
+  type BrowseSort,
   type DeckId,
   type ListedMap,
   type MediaType,
@@ -19,8 +20,8 @@ interface Options {
   region: Region;
   /** Genre display-form names; empty array means "no genre filter". */
   genres: string[];
-  /** Randomize which slice of the result set pages through (search deck). */
-  random: boolean;
+  /** Order for the search deck's category browse (ignored elsewhere). */
+  sortBy?: BrowseSort;
   /** Bulk snapshot of the viewer's list; null while guest/loading. */
   listed: ListedMap | null;
   enabled: boolean;
@@ -49,7 +50,7 @@ export function useDeck({
   mediaType,
   region,
   genres,
-  random,
+  sortBy,
   listed,
   enabled,
 }: Options) {
@@ -87,7 +88,7 @@ export function useDeck({
           mediaType,
           region,
           genres,
-          random,
+          sortBy,
           listed: listedRef.current,
         });
         if (seq !== seqRef.current) return;
@@ -112,7 +113,7 @@ export function useDeck({
         }
       }
     },
-    [deckId, search, showAdded, token, mediaType, region, genres, random],
+    [deckId, search, showAdded, token, mediaType, region, genres, sortBy],
   );
 
   // Reset whenever the deck definition changes.
@@ -126,7 +127,7 @@ export function useDeck({
     setError(null);
     setLoading(false);
     if (enabled) void load(seq, 1, true);
-  }, [deckId, search, showAdded, token, mediaType, region, genres, random, enabled, load]);
+  }, [deckId, search, showAdded, token, mediaType, region, genres, sortBy, enabled, load]);
 
   // The bulk list snapshot landed (or showAdded flipped): hide anything on the
   // user's list that slipped into the queue, and backfill "On your list"

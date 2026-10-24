@@ -26,7 +26,7 @@ export default function ActionBar({
   const planTitle = isManga ? "Plan to read (↑)" : "Plan to watch (↑)";
 
   return (
-    <div className="flex items-center justify-center gap-4">
+    <div className="relative flex items-center justify-center gap-4">
       <button
         type="button"
         onClick={onUndo}
@@ -71,7 +71,7 @@ export default function ActionBar({
         <CheckIcon className="h-7 w-7" strokeWidth={2.6} />
       </button>
 
-      <span className="ml-1 hidden select-none text-[11px] leading-tight text-stone-500 sm:block">
+      <span className="absolute left-full top-1/2 ml-4 hidden -translate-y-1/2 select-none text-[11px] leading-tight text-stone-500 sm:block">
         ← skip
         <br />→ {isManga ? "read" : "watched"}
         <br />↑ plan
