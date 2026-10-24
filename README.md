@@ -83,6 +83,25 @@ and make sure the same URL is the Redirect URL in the AniList developer settings
 
 The `api/token.mjs` file is deployed automatically as a serverless function — no extra config.
 
+## Troubleshooting
+
+### Login fails with `invalid_client` / "Client authentication failed"
+
+The browser reached AniList and got an authorization code, then AniList rejected the **server's**
+credentials during the token exchange. This is a server configuration problem, not a browser one:
+
+- `ANILIST_CLIENT_SECRET` must belong to **the same AniList app** as
+  `VITE_ANILIST_CLIENT_ID` — copy both from <https://anilist.co/settings/developer>.
+- An old secret fails even when the client ID and redirect URL are correct. If you regenerated
+  the secret, re-copy it everywhere it is configured (local `.env` **and** the host's dashboard).
+- Paste values without quotes, spaces, or newlines. The handler trims stray whitespace/BOM/quotes
+  defensively, but it cannot repair a value that belongs to another app.
+- Vercel bakes `VITE_*` variables in at build time and reads `ANILIST_CLIENT_SECRET` at runtime —
+  after changing either, redeploy so both sides agree.
+
+A quick way to tell a good pair from a bad one: send a token request with a dummy code. A valid
+pair fails with `Cannot decrypt the authorization code`; a bad pair returns `invalid_client`.
+
 ## How it works
 
 - **Auth**: OAuth2 [Authorization Code Grant](https://docs.anilist.co/guide/auth/authorization-code).

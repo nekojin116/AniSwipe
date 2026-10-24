@@ -8,6 +8,24 @@
 
 const TOKEN_ENDPOINT = "https://anilist.co/api/v2/oauth/token";
 
+/**
+ * Read an environment variable defensively. Hosting dashboards often keep
+ * pasted whitespace, surrounding quotes, or a BOM — any of which makes AniList
+ * reject an otherwise-correct client secret with `invalid_client`.
+ */
+function readEnv(name) {
+  const raw = process.env[name];
+  if (typeof raw !== "string") return "";
+  let value = raw.replace(/^\uFEFF/, "").trim();
+  if (
+    (value.startsWith('"') && value.endsWith('"')) ||
+    (value.startsWith("'") && value.endsWith("'"))
+  ) {
+    value = value.slice(1, -1).trim();
+  }
+  return value;
+}
+
 function readBody(req) {
   if (req.body !== undefined && req.body !== null) {
     return typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body;
@@ -41,9 +59,9 @@ export default async function handler(req, res) {
     return send(res, 405, { error: "method_not_allowed" });
   }
 
-  const clientId = process.env.VITE_ANILIST_CLIENT_ID;
-  const clientSecret = process.env.ANILIST_CLIENT_SECRET;
-  const expectedRedirect = process.env.VITE_ANILIST_REDIRECT_URI;
+  const clientId = readEnv("VITE_ANILIST_CLIENT_ID");
+  const clientSecret = readEnv("ANILIST_CLIENT_SECRET");
+  const expectedRedirect = readEnv("VITE_ANILIST_REDIRECT_URI");
 
   if (!clientId || !clientSecret) {
     return send(res, 500, {
@@ -91,9 +109,30 @@ export default async function handler(req, res) {
 
     const data = await upstream.json().catch(() => ({}));
     if (!upstream.ok || !data.access_token) {
+      // AniList replies with `message` where OAuth normally uses `error_description`.
+      const description =
+        data.error_description ?? data.message ?? "AniList rejected the token exchange.";
+
+      if (data.error === "invalid_client") {
+        return send(res, 502, {
+          error: "invalid_client",
+          error_description:
+            `AniList rejected the server's client credentials (client ID ${clientId}). ` +
+            "ANILIST_CLIENT_SECRET must belong to that AniList application and contain no " +
+            "stray whitespace or quotes. Update the server environment variables and redeploy.",
+        });
+      }
+
+      if (data.error === "invalid_grant") {
+        return send(res, 502, {
+          error: "invalid_grant",
+          error_description: "That login link expired or was already used — start the login again.",
+        });
+      }
+
       return send(res, 502, {
         error: data.error ?? "exchange_failed",
-        error_description: data.error_description ?? data.message ?? "AniList rejected the token exchange.",
+        error_description: description,
       });
     }
 

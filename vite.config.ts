@@ -13,7 +13,11 @@ function anilistTokenDev(env: Record<string, string>): Plugin {
     configureServer(server) {
       // The handler reads process.env; Vite keeps .env files out of it.
       for (const key of ["VITE_ANILIST_CLIENT_ID", "ANILIST_CLIENT_SECRET", "VITE_ANILIST_REDIRECT_URI"]) {
-        if (env[key]) process.env[key] = env[key];
+        const value = env[key]
+          ?.replace(/^\uFEFF/, "")
+          .trim()
+          .replace(/^(['"])([\s\S]*)\1$/, "$2");
+        if (value) process.env[key] = value;
       }
       server.middlewares.use("/api/token", ((req, res, next) => {
         if (req.method !== "POST") return next();
