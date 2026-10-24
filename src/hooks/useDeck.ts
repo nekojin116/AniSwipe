@@ -64,6 +64,10 @@ export function useDeck({
   const [hasNextPage, setHasNextPage] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<AlError | null>(null);
+  // Bumped after every completed fetch. The top-up effect below uses this so
+  // an all-filtered page (0 items, same length as before) still advances to
+  // the next page instead of leaving the deck stuck on "Loading deck…".
+  const [loadTick, setLoadTick] = useState(0);
 
   const pageRef = useRef(0);
   const seqRef = useRef(0);
@@ -110,6 +114,7 @@ export function useDeck({
         setHasNextPage(result.hasNextPage);
         setError(null);
         setItems((prev) => dedupe(replace ? result.items : [...prev, ...result.items]));
+        setLoadTick((tick) => tick + 1);
       } catch (err) {
         const alErr = err instanceof AlError ? err : new AlError(String(err));
         if (seq !== seqRef.current) return;
@@ -170,13 +175,14 @@ export function useDeck({
     });
   }, [listed, showAdded]);
 
-  // Keep the stack topped up.
+  // Keep the stack topped up. `loadTick` makes an all-filtered page retry the
+  // next page even though the item count stayed at 0.
   useEffect(() => {
     if (!enabled || loadingRef.current || error || !hasNextPage) return;
     if (items.length < 6) {
       void load(seqRef.current, pageRef.current + 1, false);
     }
-  }, [enabled, items.length, hasNextPage, error, load]);
+  }, [enabled, items.length, hasNextPage, error, load, loadTick]);
 
   const loadMore = useCallback(() => {
     if (loadingRef.current) return;
