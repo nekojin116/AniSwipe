@@ -1,6 +1,6 @@
 import type { DeckDef, DeckId, MediaType, Region, Viewer } from "../lib/anilist";
 import { MANGA_REGIONS, regionDef } from "../lib/anilist";
-import { ChartIcon, LogoMark, LogoutIcon, SearchIcon } from "./icons";
+import { ChartIcon, LogoMark, LogoutIcon, SearchIcon, UploadIcon } from "./icons";
 
 interface Props {
   viewer: Viewer | null;
@@ -8,12 +8,14 @@ interface Props {
   deckId: DeckId;
   mediaType: MediaType;
   region: Region;
-  /** Deck view vs. the stats page. */
-  view: "deck" | "stats";
+  /** Deck view, the stats page, or the backup importer. */
+  view: "deck" | "stats" | "import";
   onMediaTypeChange: (type: MediaType) => void;
   onDeckChange: (id: DeckId) => void;
   onRegionChange: (region: Region) => void;
   onStats: () => void;
+  /** Manga only: open the Tachiyomi backup importer. */
+  onImport: () => void;
   searchInput: string;
   onSearchChange: (value: string) => void;
   onLogin: () => void;
@@ -33,6 +35,7 @@ export default function TopBar({
   onDeckChange,
   onRegionChange,
   onStats,
+  onImport,
   searchInput,
   onSearchChange,
   onLogin,
@@ -95,6 +98,24 @@ export default function TopBar({
         </nav>
 
         <div className="flex shrink-0 items-center gap-2">
+          {mediaType === "MANGA" && (
+            <button
+              type="button"
+              onClick={onImport}
+              aria-pressed={view === "import"}
+              aria-label="Import a Tachiyomi backup"
+              title="Import a Tachiyomi, Mihon or Tachimanga backup"
+              // Phones get this in the Origin row instead — the deck tabs need the room.
+              className={`hidden shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-semibold transition sm:flex ${
+                view === "import"
+                  ? "brand-gradient text-white shadow-[0_6px_18px_-6px_rgba(225,29,72,0.55)]"
+                  : "glass text-stone-600 hover:bg-stone-900/5 hover:text-stone-900"
+              }`}
+            >
+              <UploadIcon className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Import</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={onStats}
@@ -149,28 +170,39 @@ export default function TopBar({
       {/* Manga/manhwa/manhua origin filter — manga decks only */}
       {view === "deck" && mediaType === "MANGA" && (
         <div className="border-t border-stone-900/10">
-          <div className="no-scrollbar mx-auto flex w-full max-w-5xl items-center gap-1.5 overflow-x-auto px-4 py-1.5">
-            <span className="shrink-0 pr-1 text-[10px] font-semibold uppercase tracking-wider text-stone-500">
-              Origin
-            </span>
-            {MANGA_REGIONS.map((r) => (
-              <button
-                key={r.id}
-                type="button"
-                aria-pressed={region === r.id}
-                onClick={() => onRegionChange(r.id)}
-                title={`Only ${r.term} from ${
-                  r.id === "ALL" ? "any country" : r.id === "JP" ? "Japan" : r.id === "KR" ? "Korea" : "China"
-                }`}
-                className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium transition ${
-                  region === r.id
-                    ? "border border-rose-500/40 bg-rose-500/10 text-rose-700"
-                    : "border border-transparent text-stone-500 hover:bg-stone-900/5 hover:text-stone-700"
-                }`}
-              >
-                {r.label}
-              </button>
-            ))}
+          <div className="mx-auto flex w-full max-w-5xl items-center gap-2 px-4 py-1.5">
+            <div className="no-scrollbar flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto">
+              <span className="shrink-0 pr-1 text-[10px] font-semibold uppercase tracking-wider text-stone-500">
+                Origin
+              </span>
+              {MANGA_REGIONS.map((r) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  aria-pressed={region === r.id}
+                  onClick={() => onRegionChange(r.id)}
+                  title={`Only ${r.term} from ${
+                    r.id === "ALL" ? "any country" : r.id === "JP" ? "Japan" : r.id === "KR" ? "Korea" : "China"
+                  }`}
+                  className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium transition ${
+                    region === r.id
+                      ? "border border-rose-500/40 bg-rose-500/10 text-rose-700"
+                      : "border border-transparent text-stone-500 hover:bg-stone-900/5 hover:text-stone-700"
+                  }`}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={onImport}
+              title="Import a Tachiyomi, Mihon or Tachimanga backup"
+              className="flex shrink-0 items-center gap-1 rounded-full border border-stone-900/10 px-2.5 py-1 text-[11px] font-medium text-stone-600 transition hover:bg-stone-900/5 hover:text-stone-700 sm:hidden"
+            >
+              <UploadIcon className="h-3 w-3" />
+              Import
+            </button>
           </div>
         </div>
       )}

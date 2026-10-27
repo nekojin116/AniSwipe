@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import TopBar from "./TopBar";
 import StatsPage from "./StatsPage";
 import SwipeDeck, { type SwipeDeckHandle } from "./SwipeDeck";
@@ -49,6 +49,9 @@ interface Stats {
   planning: number;
   skipped: number;
 }
+
+// The importer (and the SQLite engine it pulls in) loads only when opened.
+const ImportPage = lazy(() => import("./ImportPage"));
 
 const EMPTY_STATS: Stats = { completed: 0, planning: 0, skipped: 0 };
 
@@ -110,7 +113,7 @@ export default function SwipeApp({
   const [genres, setGenres] = useState<string[]>(loadStoredGenres);
   const [sortBy, setSortBy] = useState<BrowseSort>(loadStoredSort);
   const [deckId, setDeckId] = useState<DeckId>("popular");
-  const [view, setView] = useState<"deck" | "stats">("deck");
+  const [view, setView] = useState<"deck" | "stats" | "import">("deck");
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [showAdded, setShowAdded] = useState(false);
@@ -247,6 +250,8 @@ export default function SwipeApp({
     (next: MediaType) => {
       if (next === mediaType) return;
       setMediaType(next);
+      // The importer is manga-only.
+      setView((current) => (current === "import" ? "deck" : current));
       // Undo state and the session tally are media-specific: an undo must
       // never push a card from the other deck back into this one.
       setLastAction(null);
@@ -264,6 +269,21 @@ export default function SwipeApp({
   }, []);
 
   const openStats = useCallback(() => setView("stats"), []);
+  const openImport = useCallback(() => setView("import"), []);
+
+  // Imported entries join the bulk snapshot so the deck hides them at once.
+  const handleImported = useCallback(
+    (entries: { mediaId: number; id: number; status: string }[]) => {
+      if (typeRef.current !== "MANGA") return;
+      setListed((prev) => {
+        if (!prev) return prev;
+        const next = new Map(prev);
+        for (const entry of entries) next.set(entry.mediaId, { id: entry.id, status: entry.status });
+        return next;
+      });
+    },
+    [],
+  );
 
   const browseFromStats = useCallback(() => {
     setDeckId("popular");
@@ -498,12 +518,39 @@ export default function SwipeApp({
       onDeckChange={selectDeck}
       onRegionChange={setRegion}
       onStats={openStats}
+      onImport={openImport}
       searchInput={searchInput}
       onSearchChange={setSearchInput}
       onLogin={onLogin}
       onLogout={onLogout}
     />
   );
+
+  if (view === "import") {
+    return (
+      <div className="relative z-10 flex min-h-full flex-col">
+        {topBar}
+        <Suspense
+          fallback={
+            <div className="flex flex-1 items-center justify-center py-20">
+              <Spinner className="h-7 w-7 text-rose-500" />
+            </div>
+          }
+        >
+          <ImportPage
+            token={token}
+            viewer={viewer}
+            listed={listed}
+            onLogin={onLogin}
+            onBrowse={browseFromStats}
+            onSessionExpired={onSessionExpired}
+            onImported={handleImported}
+          />
+        </Suspense>
+        <Toast toast={toast} />
+      </div>
+    );
+  }
 
   if (view === "stats") {
     return (

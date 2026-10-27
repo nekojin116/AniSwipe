@@ -147,6 +147,16 @@ pair fails with `Cannot decrypt the authorization code`; a bad pair returns `inv
   planned days, episode/chapter buckets, format/status/country donuts, and release-year series.
   The anime/manga toggle switches the dataset and the page adapts its labels and metrics. Every visit
   or **Refresh** is a fresh request, unlike AniList's once-a-day stats page; guests see a login prompt.
+- **Backup import (manga)**: **Import** in the manga top bar reads a Tachimanga `.tmb` (ZIP →
+  `contents.zip` → `tachimanga.db`, read with sql.js) or a Tachiyomi/Mihon `.tachibk` / `.proto.gz`
+  (gzipped protobuf) entirely in the browser. Library titles are matched through their tracker
+  links (AniList or MyAnimeList ids) when present, otherwise by batched title search, keeping the
+  candidate whose titles/synonyms are most similar. Each title gets a proposed status (nothing
+  read → Plan to read, all chapters read and the series finished → Completed, otherwise Reading)
+  and progress (highest chapter read). Weak matches, duplicates and titles already on your list
+  are left unticked for review. Saves go out as aliased `SaveMediaListEntry` batches of 10, paced
+  to about 30 requests a minute. The importer and its ~650 KB SQLite wasm load only when the page
+  is opened.
 - **Swipes**: `SaveMediaListEntry(mediaId, status)` mutation; undo runs
   `DeleteMediaListEntry(id)` (or restores the previous status if the entry already existed).
 - **Local skips**: a left swipe stores the title id in `localStorage` (`aniswipe.skipped.v1`,
